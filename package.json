@@ -2,6 +2,7 @@
   "name": "apigee2openapi",
   "version": "1.0.0",
   "description": "The Apigee2OpenAPI tool is designed to parse the Apigee Proxy Bundle and generate corresponding OpenAPI specifications.",
+  "type":"module",
   "main": "apigee2openapi.js",
   "dependencies": {
     "ajv": "^6.12.6",

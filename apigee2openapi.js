@@ -1,5 +1,7 @@
-var program = require('commander');
-var fetch = require('./fetchApi');
+import { Command } from 'commander';
+import fetch from './fetchApi.js';
+
+const program = new Command();
 
 program
   .usage('<options>')
@@ -13,14 +15,14 @@ program
 
 program.parse(process.argv);
 
-var options = {};
+const options = {};
 options.destination = program.destination;
 options.file = program.local;
 options.api = program.name;
 options.proxyEndPoint = program.endpoint;
 options.authType = program.auth;
 
-fetch.fetchProxy(options, function (err, reply) {
+fetch(options, function (err) {
   if (err) {
     console.log(err);
   }
