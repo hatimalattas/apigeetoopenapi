@@ -17,11 +17,11 @@ program
 program.parse(process.argv);
 
 const options = {};
-options.destination = program.output;
-options.file = program.input;
-options.api = program.name;
-options.proxyEndPoint = program.baseurl;
-options.authType = program.auth;
+options.destination = program._optionValues.output;
+options.file = program._optionValues.input;
+options.api = program._optionValues.name;
+options.proxyEndPoint = program._optionValues.baseurl;
+options.authType = program._optionValues.auth;
 
 fetch(options, function (err) {
   if (err) {
