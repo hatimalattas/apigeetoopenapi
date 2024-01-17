@@ -118,7 +118,7 @@ Example
 2. **Running the Tool**: To convert an API Proxy Bundle:
 
     ```bash
-    node apigeetoopenapi.js [options]
+    apigeetoopenapi [options]
     ```
 
     Options include:
