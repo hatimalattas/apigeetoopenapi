@@ -5,6 +5,9 @@
   "type": "module",
   "main": "apigeetoopenapi.js",
   "homepage": "https://github.com/hatimalattas/ApigeeToOpenAPI",
+  "bin":{
+    "apigeetoopenapi": "./apigeetoopenapi.js"
+  },
   "dependencies": {
     "ajv": "^6.12.6",
     "ansi-colors": "^4.1.1",
