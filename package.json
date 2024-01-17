@@ -1,6 +1,6 @@
 {
   "name": "apigeetoopenapi",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "The ApigeeToOpenAPI tool is designed to parse the Apigee Proxy Bundle and generate corresponding OpenAPI specifications.",
   "type": "module",
   "main": "apigeetoopenapi.js",
@@ -260,7 +260,7 @@
   },
   "optionalDependencies": {
     "fsevents": "^2.3.3"
-  },  
+  },
   "devDependencies": {
     "eslint": "^8.56.0",
     "eslint-config-airbnb-base": "^15.0.0",
