@@ -5,21 +5,20 @@ const program = new Command();
 
 program
   .usage('<options>')
-  .option('-d, --destination <file>', 'API Bundle destination location....')
-  .option('-l, --local <file>', 'Use local API bundle')
+  .option('-o, --output <file>', 'Outout path for the openapi spec')
+  .option('-i, --input <file>', 'Path to your bundle.zip file')
   .option('-n, --name <API name>', 'API proxy name. Required if local bundle is used')
-  .option('-e, --endpoint <API proxy endpoint>', 'API proxy endpoint e.g. https://api.exmaple.com. Required if local bundle is used.')
+  .option('-b, --baseurl <API proxy base URL>', 'API proxy URL e.g. https://api.exmaple.com. Required if local bundle is used.')
   .option('-a, --auth <type>', 'Specify the authentication type (basic, apiKey, oauth2, none).')
-
   .description('Generates openapi 3.0.0 Spec from Apigee Proxy');
 
 program.parse(process.argv);
 
 const options = {};
-options.destination = program.destination;
-options.file = program.local;
+options.destination = program.output;
+options.file = program.input;
 options.api = program.name;
-options.proxyEndPoint = program.endpoint;
+options.proxyEndPoint = program.baseurl;
 options.authType = program.auth;
 
 fetch(options, function (err) {

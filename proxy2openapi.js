@@ -3,14 +3,6 @@ import xml2js from 'xml2js';
 import url from 'url';
 
 async function genopenapi(location, answers, xmlFile, cb) {
-  // console.log("Generating openapi spec...");
-  // console.log(location);
-  // console.log("------------------");
-  // console.log(answers);
-  // console.log("------------------");
-  // console.log(xmlFile);
-  // console.log("------------------");
-
   let badRequestErrors = [{ code: '400', message: 'Bad Request' }];
   let unauthorizedRequestErrors = [{ code: '401', message: 'Unauthorized' }];
   let forbiddenRequestErrors = [{ code: '403', message: 'Forbidden' }];
@@ -50,16 +42,12 @@ async function genopenapi(location, answers, xmlFile, cb) {
   for (const key in replyProxy.ProxyEndpoint.Flows[0].Flow) {
     const openapiPath = JSON.parse(JSON.stringify(replyProxy.ProxyEndpoint.Flows[0].Flow[key]));
     if (openapiPath['Condition'] !== null) {
-      // console.log("hello")
       const flowCondition = openapiPath['Condition'].pop();
-      // console.log(flowCondition);
       // Get Path & Verb...
       const rxVerb = /request.verb = "(.*?)"/g;
       const rxPath = /proxy.pathsuffix MatchesPath "(.*?)"/g;
       const verbArr = rxVerb.exec(flowCondition);
       const pathArr = rxPath.exec(flowCondition);
-      // console.log(verbArr);
-      // console.log(pathArr);
       let resourcePath = '';
       let resourceVerb = '';
       if (verbArr !== null && pathArr !== null) {
@@ -275,257 +263,7 @@ async function genopenapi(location, answers, xmlFile, cb) {
     }
   }
 
-  function addParametersAndRequestBody(paramArr, openapiType, openapiPath, ignoreUnresolvedletiables) {
-    const isRequired = ignoreUnresolvedletiables !== 'true';
 
-    // Handling requestBody separately
-    if (openapiType === 'requestBody') {
-      if (!openapiPath.requestBody) {
-        openapiPath.requestBody = {
-          required: isRequired,
-          content: {
-            'application/json': {
-              schema: {
-                type: 'object',
-                properties: {},
-                // required array can be added if needed
-              },
-            },
-          },
-        };
-      }
-      const requestBodySchema = openapiPath.requestBody.content['application/json'].schema;
-
-      paramArr.forEach((param) => {
-        const paramName = param.$.name;
-        let paramType = param.$.type !== undefined ? param.$.type : 'string';
-        paramType = paramType === 'float' ? 'number' : paramType;
-        const propertyDescription = param.$.description !== undefined ? param.$.description : '';
-        const propertyPlaceholder = param.$.placeholder !== undefined ? param.$.placeholder : '';
-
-        requestBodySchema.properties[paramName] = {
-          type: paramType,
-          description: propertyDescription,
-          example: propertyPlaceholder,
-        };
-        // If you need to keep track of required properties in requestBody
-        if (isRequired) {
-          requestBodySchema.required = requestBodySchema.required || [];
-          requestBodySchema.required.push(paramName);
-        }
-      });
-    } else {
-      // Handling other parameter types (header, query, path, cookie)
-      if (!openapiPath.parameters) {
-        openapiPath.parameters = [];
-      }
-
-      paramArr.forEach((param) => {
-        const paramName = param.$.name;
-        let paramType = param.$.type !== undefined ? param.$.type : 'string';
-        paramType = paramType === 'float' ? 'number' : paramType;
-        const paramDescription = param.$.description !== undefined ? param.$.description : '';
-        const paramPlaceholder = param.$.placeholder !== undefined ? param.$.placeholder : '';
-
-        const parameterObj = {
-          name: paramName,
-          in: openapiType,
-          description: paramDescription,
-          required: isRequired,
-          schema: {
-            type: paramType,
-          },
-          example: paramPlaceholder,
-        };
-        openapiPath.parameters.push(parameterObj);
-      });
-    }
-  }
-
-  function generateSchemaFromJson(jsonObject) {
-    if (typeof jsonObject !== 'object' || jsonObject === null) {
-      return { type: getType(jsonObject) };
-    }
-
-    const schema = {};
-    if (Array.isArray(jsonObject)) {
-      schema.type = 'array';
-      schema.items = jsonObject.length > 0 ? generateSchemaFromJson(jsonObject[0]) : {};
-    } else {
-      schema.type = 'object';
-      schema.properties = {};
-      for (const key in jsonObject) {
-        schema.properties[key] = generateSchemaFromJson(jsonObject[key]);
-      }
-    }
-    return schema;
-  }
-
-  function generateResponseSchema(payload, contentType) {
-    try {
-      const jsonObject = JSON.parse(payload);
-      return {
-        description: 'Successful Operation',
-        content: {
-          [contentType]: {
-            schema: generateSchemaFromJson(jsonObject),
-            example: jsonObject,
-          },
-        },
-      };
-    } catch (error) {
-      console.log('Failed to parse JSON string: ', error);
-      return {
-        description: 'Successful Operation',
-      };
-    }
-  }
-
-  function createErrorResponse(errorList) {
-    const response = {
-      description: 'A list of possible errors for the given status code',
-      content: {
-        'application/json': {
-          schema: {},
-          // Examples will be added only if there is more than one error message
-        },
-      },
-    };
-
-    // Set the description based on the number of errors
-    if (errorList.length === 1) {
-      response.description = 'An error response';
-    } else {
-      response.description = 'A list of possible error responses';
-    }
-
-    // Check if there is only one error in the list
-    if (errorList.length === 1) {
-      const error = errorList[0];
-      response.content['application/json'].schema = {
-        type: 'object',
-        properties: {
-          code: {
-            type: 'string',
-            description: 'The error code representing the type of error.',
-          },
-          message: {
-            type: 'string',
-            description: 'A message providing more details about the error.',
-          },
-          tracking_id: {
-            type: 'string',
-            description: 'A unique identifier for this error.',
-          },
-        },
-        required: ['code', 'message', 'tracking_id'],
-        example: {
-          code: error.code,
-          message: error.message,
-          tracking_id: '-04-630999-158927-2',
-        },
-      };
-    } else {
-      // For multiple errors, use 'oneOf' to define multiple schemas
-      response.content['application/json'].schema.oneOf = errorList.map((error) => ({
-        type: 'object',
-        properties: {
-          code: {
-            type: 'string',
-            description: 'The error code representing the type of error.',
-          },
-          message: {
-            type: 'string',
-            description: 'A message providing more details about the error.',
-          },
-        },
-        required: ['code', 'message', 'tracking_id'],
-        example: {
-          code: error.code,
-          message: error.message,
-          tracking_id: '-04-630999-158927-2',
-        },
-      }));
-
-      // Add 'examples' only when there are multiple error messages
-      response.content['application/json'].examples = errorList.reduce((examples, error, index) => {
-        const exampleKey = `example${index + 1}`;
-        examples[exampleKey] = {
-          summary: `Example ${index + 1}`,
-          value: {
-            code: error.code,
-            message: error.message,
-            tracking_id: '-04-630999-158927-2',
-          },
-        };
-        return examples;
-      }, {});
-    }
-    return response;
-  }
-
-  function getType(value) {
-    const type = typeof value;
-    switch (type) {
-      case 'number':
-        return Number.isInteger(value) ? 'integer' : 'number';
-      case 'string':
-        return 'string';
-      case 'boolean':
-        return 'boolean';
-      default:
-        return 'object';
-    }
-  }
-
-  function addSecuritySchema(openAPIObj, authType) {
-    if (!authType) {
-      return;
-    }
-    if (!openAPIObj.components) {
-      openAPIObj.components = {};
-    }
-    if (!openAPIObj.components.securitySchemes) {
-      openAPIObj.components.securitySchemes = {};
-    }
-    let securitySchemeKey;
-
-    switch (authType) {
-      case 'basic':
-        securitySchemeKey = 'basicAuth';
-        openAPIObj.components.securitySchemes.basicAuth = {
-          type: 'http',
-          scheme: 'basic',
-        };
-        break;
-      case 'apiKey':
-        securitySchemeKey = 'apiKeyAuth';
-        openAPIObj.components.securitySchemes.apiKeyAuth = {
-          type: 'apiKey',
-          in: 'header',
-          name: 'X-API-Key',
-        };
-        break;
-      case 'oauth2':
-        securitySchemeKey = 'bearerAuth';
-        // Bearer token authentication
-        openAPIObj.components.securitySchemes.bearerAuth = {
-          type: 'http',
-          scheme: 'bearer',
-          // bearerFormat: 'JWT'  // Assuming JWT tokens, can be omitted if a different format
-        };
-        break;
-      default:
-        console.log(`Unsupported authentication type: ${authType}`);
-        return; // Exit if the auth type is not supported
-    }
-    // Apply the security globally to all operations
-    openAPIObj.security = [
-      {
-        [securitySchemeKey]: [],
-      },
-    ];
-  }
 
   // Add Security Schema
   addSecuritySchema(openapiJson, answers.authType);
@@ -546,6 +284,258 @@ async function genopenapi(location, answers, xmlFile, cb) {
     console.log('openapi JSON File successfully generated in : ' + location + '/' + jsonFileName + '.json');
     cb(null, {});
   });
+}
+
+function addParametersAndRequestBody(paramArr, openapiType, openapiPath, ignoreUnresolvedletiables) {
+  const isRequired = ignoreUnresolvedletiables !== 'true';
+
+  // Handling requestBody separately
+  if (openapiType === 'requestBody') {
+    if (!openapiPath.requestBody) {
+      openapiPath.requestBody = {
+        required: isRequired,
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {},
+              // required array can be added if needed
+            },
+          },
+        },
+      };
+    }
+    const requestBodySchema = openapiPath.requestBody.content['application/json'].schema;
+
+    paramArr.forEach((param) => {
+      const paramName = param.$.name;
+      let paramType = param.$.type !== undefined ? param.$.type : 'string';
+      paramType = paramType === 'float' ? 'number' : paramType;
+      const propertyDescription = param.$.description !== undefined ? param.$.description : '';
+      const propertyPlaceholder = param.$.placeholder !== undefined ? param.$.placeholder : '';
+
+      requestBodySchema.properties[paramName] = {
+        type: paramType,
+        description: propertyDescription,
+        example: propertyPlaceholder,
+      };
+      // If you need to keep track of required properties in requestBody
+      if (isRequired) {
+        requestBodySchema.required = requestBodySchema.required || [];
+        requestBodySchema.required.push(paramName);
+      }
+    });
+  } else {
+    // Handling other parameter types (header, query, path, cookie)
+    if (!openapiPath.parameters) {
+      openapiPath.parameters = [];
+    }
+
+    paramArr.forEach((param) => {
+      const paramName = param.$.name;
+      let paramType = param.$.type !== undefined ? param.$.type : 'string';
+      paramType = paramType === 'float' ? 'number' : paramType;
+      const paramDescription = param.$.description !== undefined ? param.$.description : '';
+      const paramPlaceholder = param.$.placeholder !== undefined ? param.$.placeholder : '';
+
+      const parameterObj = {
+        name: paramName,
+        in: openapiType,
+        description: paramDescription,
+        required: isRequired,
+        schema: {
+          type: paramType,
+        },
+        example: paramPlaceholder,
+      };
+      openapiPath.parameters.push(parameterObj);
+    });
+  }
+}
+
+function generateSchemaFromJson(jsonObject) {
+  if (typeof jsonObject !== 'object' || jsonObject === null) {
+    return { type: getType(jsonObject) };
+  }
+
+  const schema = {};
+  if (Array.isArray(jsonObject)) {
+    schema.type = 'array';
+    schema.items = jsonObject.length > 0 ? generateSchemaFromJson(jsonObject[0]) : {};
+  } else {
+    schema.type = 'object';
+    schema.properties = {};
+    for (const key in jsonObject) {
+      schema.properties[key] = generateSchemaFromJson(jsonObject[key]);
+    }
+  }
+  return schema;
+}
+
+function generateResponseSchema(payload, contentType) {
+  try {
+    const jsonObject = JSON.parse(payload);
+    return {
+      description: 'Successful Operation',
+      content: {
+        [contentType]: {
+          schema: generateSchemaFromJson(jsonObject),
+          example: jsonObject,
+        },
+      },
+    };
+  } catch (error) {
+    console.log('Failed to parse JSON string: ', error);
+    return {
+      description: 'Successful Operation',
+    };
+  }
+}
+
+function createErrorResponse(errorList) {
+  const response = {
+    description: 'A list of possible errors for the given status code',
+    content: {
+      'application/json': {
+        schema: {},
+        // Examples will be added only if there is more than one error message
+      },
+    },
+  };
+
+  // Set the description based on the number of errors
+  if (errorList.length === 1) {
+    response.description = 'An error response';
+  } else {
+    response.description = 'A list of possible error responses';
+  }
+
+  // Check if there is only one error in the list
+  if (errorList.length === 1) {
+    const error = errorList[0];
+    response.content['application/json'].schema = {
+      type: 'object',
+      properties: {
+        code: {
+          type: 'string',
+          description: 'The error code representing the type of error.',
+        },
+        message: {
+          type: 'string',
+          description: 'A message providing more details about the error.',
+        },
+        trackingId: {
+          type: 'string',
+          description: 'A unique identifier for this error.',
+        },
+      },
+      required: ['code', 'message', 'trackingId'],
+      example: {
+        code: error.code,
+        message: error.message,
+        trackingId: '-04-630999-158927-2',
+      },
+    };
+  } else {
+    // For multiple errors, use 'oneOf' to define multiple schemas
+    response.content['application/json'].schema.oneOf = errorList.map((error) => ({
+      type: 'object',
+      properties: {
+        code: {
+          type: 'string',
+          description: 'The error code representing the type of error.',
+        },
+        message: {
+          type: 'string',
+          description: 'A message providing more details about the error.',
+        },
+      },
+      required: ['code', 'message', 'trackingId'],
+      example: {
+        code: error.code,
+        message: error.message,
+        trackingId: '-04-630999-158927-2',
+      },
+    }));
+
+    // Add 'examples' only when there are multiple error messages
+    response.content['application/json'].examples = errorList.reduce((examples, error, index) => {
+      const exampleKey = `example${index + 1}`;
+      examples[exampleKey] = {
+        summary: `Example ${index + 1}`,
+        value: {
+          code: error.code,
+          message: error.message,
+          trackingId: '-04-630999-158927-2',
+        },
+      };
+      return examples;
+    }, {});
+  }
+  return response;
+}
+
+function getType(value) {
+  const type = typeof value;
+  switch (type) {
+    case 'number':
+      return Number.isInteger(value) ? 'integer' : 'number';
+    case 'string':
+      return 'string';
+    case 'boolean':
+      return 'boolean';
+    default:
+      return 'object';
+  }
+}
+
+function addSecuritySchema(openAPIObj, authType) {
+  if (!authType) {
+    return;
+  }
+  if (!openAPIObj.components) {
+    openAPIObj.components = {};
+  }
+  if (!openAPIObj.components.securitySchemes) {
+    openAPIObj.components.securitySchemes = {};
+  }
+  let securitySchemeKey;
+
+  switch (authType) {
+    case 'basic':
+      securitySchemeKey = 'basicAuth';
+      openAPIObj.components.securitySchemes.basicAuth = {
+        type: 'http',
+        scheme: 'basic',
+      };
+      break;
+    case 'apiKey':
+      securitySchemeKey = 'apiKeyAuth';
+      openAPIObj.components.securitySchemes.apiKeyAuth = {
+        type: 'apiKey',
+        in: 'header',
+        name: 'X-API-Key',
+      };
+      break;
+    case 'oauth2':
+      securitySchemeKey = 'bearerAuth';
+      // Bearer token authentication
+      openAPIObj.components.securitySchemes.bearerAuth = {
+        type: 'http',
+        scheme: 'bearer',
+        // bearerFormat: 'JWT'  // Assuming JWT tokens, can be omitted if a different format
+      };
+      break;
+    default:
+      console.log(`Unsupported authentication type: ${authType}`);
+      return; // Exit if the auth type is not supported
+  }
+  // Apply the security globally to all operations
+  openAPIObj.security = [
+    {
+      [securitySchemeKey]: [],
+    },
+  ];
 }
 
 function loadXMLDoc(filePath) {

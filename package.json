@@ -1,10 +1,10 @@
 {
   "name": "apigeetoopenapi",
   "version": "1.0.0",
-  "description": "The Apigee2OpenAPI tool is designed to parse the Apigee Proxy Bundle and generate corresponding OpenAPI specifications.",
+  "description": "The ApigeeToOpenAPI tool is designed to parse the Apigee Proxy Bundle and generate corresponding OpenAPI specifications.",
   "type":"module",
-  "main": "apigee2openapi.js",
-  "homepage": "https://github.com/hatimalattas/Apigee2OpenAPI",
+  "main": "apigeetoopenapi.js",
+  "homepage": "https://github.com/hatimalattas/ApigeeToOpenAPI",
   "dependencies": {
     "ajv": "^6.12.6",
     "ansi-colors": "^4.1.1",
@@ -267,10 +267,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "apigee2openapi"
+    "url": "apigeetoopenapi"
   },
   "keywords": [
-    "apigee2openapi"
+    "apigee2openapi",
+    "apigeetoopenapi",
+    "apigeex2openapi"
   ],
   "author": "Hatim Alattas <hatimalattas@outlook.com>",
   "license": "MIT"
