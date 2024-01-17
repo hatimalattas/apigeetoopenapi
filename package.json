@@ -92,7 +92,6 @@
     "fs-constants": "^1.0.0",
     "fs-extra": "^4.0.3",
     "fs.realpath": "^1.0.0",
-    "fsevents": "^2.3.2",
     "fstream": "^1.0.12",
     "function-bind": "^1.1.1",
     "get-caller-file": "^2.0.5",
@@ -259,6 +258,9 @@
     "yargs-unparser": "^2.0.0",
     "yocto-queue": "^0.1.0"
   },
+  "optionalDependencies": {
+    "fsevents": "^2.3.3"
+  },  
   "devDependencies": {
     "eslint": "^8.56.0",
     "eslint-config-airbnb-base": "^15.0.0",
