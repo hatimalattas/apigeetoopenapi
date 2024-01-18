@@ -16,10 +16,18 @@ function fetchProxyLocal(options, cb) {
   if (!options.destination) {
     options.destination = path.join(__dirname, '../api_bundles') + '/' + options.api;
   }
-  generateOpenapi(options, cb);
+  // Check if the directory is already unzipped
+  const apiproxyPath = path.join(options.destination, 'apiproxy');
+  if (fs.existsSync(apiproxyPath)) {
+    // process local proxy bundle to generate openapi spec
+    processApiProxyDirectory(apiproxyPath, options, cb);
+  } else {
+    // Unzip folder.....
+    processZippedApiProxy(options, cb);
+  }
 }
 
-function generateOpenapi(options, cb) {
+function processZippedApiProxy(options, cb) {
   // Unzip folder.....
   const stream = fs.createReadStream(options.file).pipe(unzip.Extract({ path: options.destination }));
   let hadError = false;
@@ -29,32 +37,32 @@ function generateOpenapi(options, cb) {
   });
   stream.on('close', function () {
     if (!hadError) {
-      if (options.password) {
-        delete options['password'];
-      }
-      glob(options.destination + '/apiproxy/proxies' + '/*.xml', options, function (er, files) {
-        async.each(
-          Object.keys(files),
-          function (i, callback) {
-            genopenapi(options.destination, options, files[i], function (err) {
-              if (err) {
-                callback(err, {});
-              } else {
-                callback(null, {});
-              }
-            });
-          },
-          function (err) {
-            // if any of the file processing produced an error, err would equal that error
-            if (err) {
-              cb(err, {});
-            } else {
-              cb(null, {});
-            }
-          }
-        );
-      });
+      processApiProxyDirectory(path.join(options.destination, 'apiproxy'), options, cb);
     }
+  });
+}
+
+function processApiProxyDirectory(apiproxyPath, options, cb) {
+  glob(apiproxyPath + '/proxies/*.xml', options, function (er, files) {
+    async.each(
+      files,
+      function (file, callback) {
+        genopenapi(apiproxyPath, options, file, function (err) {
+          if (err) {
+            callback(err, {});
+          } else {
+            callback(null, {});
+          }
+        });
+      },
+      function (err) {
+        if (err) {
+          cb(err, {});
+        } else {
+          cb(null, {});
+        }
+      }
+    );
   });
 }
 

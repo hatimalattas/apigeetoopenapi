@@ -9,7 +9,7 @@ async function genopenapi(location, answers, xmlFile, cb) {
   let pageNotFoundErrors = [{ code: '404', message: 'Not Found' }];
   let internalServerErrors = [{ code: '500', message: 'Internal Server Error' }];
   const openapiJson = {};
-  const reply = await loadXMLDoc(location + '/apiproxy/' + answers.api + '.xml');
+  const reply = await loadXMLDoc(location + '/' + answers.api + '.xml');
   openapiJson.openapi = '3.0.0';
   // Info Section
   openapiJson.info = {};
@@ -94,7 +94,7 @@ async function genopenapi(location, answers, xmlFile, cb) {
         // Loop through policies in Request
         for (const stepKey in openapiPath.Request[0].Step) {
           const flowStepPath = JSON.parse(JSON.stringify(openapiPath.Request[0].Step[stepKey]));
-          const replyStep = await loadXMLDoc(location + '/apiproxy/policies/' + flowStepPath.Name + '.xml');
+          const replyStep = await loadXMLDoc(location + '/policies/' + flowStepPath.Name + '.xml');
           // Check if this is Extract letiables policy
           if (replyStep.Extractletiables) {
             // If source is 'request' then capture as parameters
@@ -277,11 +277,11 @@ async function genopenapi(location, answers, xmlFile, cb) {
     }
   }
 
-  fs.writeFile(location + '/' + jsonFileName + '.json', JSON.stringify(openapiJson, null, 2), function (err) {
+  fs.writeFile(answers.destination + '/' + jsonFileName + '.json', JSON.stringify(openapiJson, null, 2), function (err) {
     if (err) {
       cb(err, {});
     }
-    console.log('openapi JSON File successfully generated in : ' + location + '/' + jsonFileName + '.json');
+    console.log('openapi JSON File successfully generated in : ' + answers.destination + '/' + jsonFileName + '.json');
     cb(null, {});
   });
 }
