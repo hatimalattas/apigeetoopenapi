@@ -271,17 +271,17 @@ async function genopenapi(location, answers, xmlFile, cb) {
   const rxJsonName = /proxies\/(.*?).xml/g;
   const jsonNameArr = rxJsonName.exec(xmlFile);
   let jsonFileName = answers.name;
-  if (jsonNameArr !== null) {
-    if (jsonNameArr[1] !== 'default') {
-      jsonFileName = jsonNameArr[1];
-    }
-  }
+  // if (jsonNameArr !== null) {
+  //   if (jsonNameArr[1] !== 'default') {
+  //     jsonFileName = jsonNameArr[1];
+  //   }
+  // }
 
-  fs.writeFile(answers.output + '/' + jsonFileName + '.json', JSON.stringify(openapiJson, null, 2), function (err) {
+  fs.writeFile(answers.output + '/' + "openapi" + '.json', JSON.stringify(openapiJson, null, 2), function (err) {
     if (err) {
       cb(err, {});
     }
-    console.log('openapi JSON File successfully generated in : ' + answers.output + '/' + jsonFileName + '.json');
+    console.log('openapi JSON File successfully generated in : ' + answers.output + '/' + "openapi" + '.json');
     cb(null, {});
   });
 }
