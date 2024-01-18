@@ -9,19 +9,19 @@ async function genopenapi(location, answers, xmlFile, cb) {
   let pageNotFoundErrors = [{ code: '404', message: 'Not Found' }];
   let internalServerErrors = [{ code: '500', message: 'Internal Server Error' }];
   const openapiJson = {};
-  const reply = await loadXMLDoc(location + '/' + answers.api + '.xml');
+  const reply = await loadXMLDoc(location + '/' + answers.name + '.xml');
   openapiJson.openapi = '3.0.0';
   // Info Section
   openapiJson.info = {};
   try {
     openapiJson.info.description = reply.APIProxy.Description ? reply.APIProxy.Description[0] : '';
     openapiJson.info.version = (reply.APIProxy.$.revision || '1') + '.0.0';
-    openapiJson.info.title = reply.APIProxy.DisplayName ? reply.APIProxy.DisplayName[0] : answers.api;
+    openapiJson.info.title = reply.APIProxy.DisplayName ? reply.APIProxy.DisplayName[0] : answers.name;
   } catch (ex) {
     console.log(ex);
   }
   // Host & BasePath Section..
-  const proxy = url.parse(answers.proxyEndPoint);
+  const proxy = url.parse(answers.baseUrl);
   const servers = [];
   const protocol = proxy.protocol ? proxy.protocol : 'http';
   openapiJson.servers = servers;
@@ -266,22 +266,22 @@ async function genopenapi(location, answers, xmlFile, cb) {
 
 
   // Add Security Schema
-  addSecuritySchema(openapiJson, answers.authType);
+  addSecuritySchema(openapiJson, answers.auth);
 
   const rxJsonName = /proxies\/(.*?).xml/g;
   const jsonNameArr = rxJsonName.exec(xmlFile);
-  let jsonFileName = answers.api;
+  let jsonFileName = answers.name;
   if (jsonNameArr !== null) {
     if (jsonNameArr[1] !== 'default') {
       jsonFileName = jsonNameArr[1];
     }
   }
 
-  fs.writeFile(answers.destination + '/' + jsonFileName + '.json', JSON.stringify(openapiJson, null, 2), function (err) {
+  fs.writeFile(answers.output + '/' + jsonFileName + '.json', JSON.stringify(openapiJson, null, 2), function (err) {
     if (err) {
       cb(err, {});
     }
-    console.log('openapi JSON File successfully generated in : ' + answers.destination + '/' + jsonFileName + '.json');
+    console.log('openapi JSON File successfully generated in : ' + answers.output + '/' + jsonFileName + '.json');
     cb(null, {});
   });
 }
@@ -526,6 +526,8 @@ function addSecuritySchema(openAPIObj, authType) {
         // bearerFormat: 'JWT'  // Assuming JWT tokens, can be omitted if a different format
       };
       break;
+    case 'none':
+      return; // No security scheme is required
     default:
       console.log(`Unsupported authentication type: ${authType}`);
       return; // Exit if the auth type is not supported

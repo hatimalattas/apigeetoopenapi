@@ -6,18 +6,18 @@ import path from 'path';
 import fs from 'fs';
 
 function fetchProxy(options, cb) {
-  if (options.file && options.api && options.proxyEndPoint) {
+  if (options.input && options.name && options.baseUrl) {
     // process local proxy bundle to generate openapi spec
     fetchProxyLocal(options, cb);
   }
 }
 
 function fetchProxyLocal(options, cb) {
-  if (!options.destination) {
-    options.destination = path.join(__dirname, '../api_bundles') + '/' + options.api;
+  if (!options.output) {
+    options.output = path.join(__dirname, '../api_bundles') + '/' + options.name;
   }
   // Check if the directory is already unzipped
-  const apiproxyPath = path.join(options.destination, 'apiproxy');
+  const apiproxyPath = path.join(options.output, 'apiproxy');
   if (fs.existsSync(apiproxyPath)) {
     // process local proxy bundle to generate openapi spec
     processApiProxyDirectory(apiproxyPath, options, cb);
@@ -29,7 +29,7 @@ function fetchProxyLocal(options, cb) {
 
 function processZippedApiProxy(options, cb) {
   // Unzip folder.....
-  const stream = fs.createReadStream(options.file).pipe(unzip.Extract({ path: options.destination }));
+  const stream = fs.createReadStream(options.input).pipe(unzip.Extract({ path: options.output }));
   let hadError = false;
   stream.on('error', function (err) {
     hadError = true;
@@ -37,7 +37,7 @@ function processZippedApiProxy(options, cb) {
   });
   stream.on('close', function () {
     if (!hadError) {
-      processApiProxyDirectory(path.join(options.destination, 'apiproxy'), options, cb);
+      processApiProxyDirectory(path.join(options.output, 'apiproxy'), options, cb);
     }
   });
 }

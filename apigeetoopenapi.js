@@ -10,18 +10,14 @@ program
   .option('-o, --output <file>', 'Outout path for the openapi spec')
   .option('-i, --input <file>', 'Path to your bundle.zip file or apiproxy directory')
   .option('-n, --name <API name>', 'API proxy name. Required if local bundle is used')
-  .option('-b, --baseurl <API proxy base URL>', 'API proxy URL e.g. https://api.exmaple.com. Required if local bundle is used.')
+  .option('-b, --baseUrl <API proxy base URL>', 'API proxy URL e.g. https://api.exmaple.com. Required if local bundle is used.')
   .option('-a, --auth <type>', 'Specify the authentication type (basic, apiKey, oauth2, none).')
   .description('Generates openapi 3.0.0 Spec from Apigee Proxy');
 
 program.parse(process.argv);
+const options = program.opts();
 
-const options = {};
-options.destination = program._optionValues.output;
-options.file = program._optionValues.input;
-options.api = program._optionValues.name;
-options.proxyEndPoint = program._optionValues.baseurl;
-options.authType = program._optionValues.auth;
+checkRequiredOptions();
 
 fetch(options, function (err) {
   if (err) {
@@ -31,3 +27,27 @@ fetch(options, function (err) {
     // nothing for now..
   }
 });
+
+function checkRequiredOptions() {
+  if (!options.output) {
+    console.log('Output  direcotry path is required');
+    process.exit(1);
+  }
+  if (!options.input) {
+    console.log('Input file path is required');
+    process.exit(1);
+  }
+  if (!options.name) {
+    console.log('API name is required');
+    process.exit(1);
+  }
+  if (!options.baseUrl) {
+    console.log('API proxy base URL is required');
+    process.exit(1);
+  }
+  if (!options.auth) {
+    console.log('Authentication type is required');
+    process.exit(1);
+  }
+}
+
