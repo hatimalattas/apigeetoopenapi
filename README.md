@@ -122,8 +122,8 @@ Example
     ```
 
     Options include:
-    - `-o, --output <file>`: Outout path for the openapi spec.
-    - `-l, --local <file>`: Path to your bundle.zip file.
+    - `-o, --output <file>`: Output path for the openapi spec.
+    - `-l, --local <file>`: Path to your bundle.zip file or apiproxy directory.
     - `-n, --name <API name>`: Name of the API proxy.
     - `-b, --baseurl <API proxy endpoint>`: Base URL of the API proxy.
     - `-a, --auth <type>`: Authentication type (basic, apiKey, oauth2, none).
