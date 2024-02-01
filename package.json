@@ -1,6 +1,6 @@
 {
   "name": "apigeetoopenapi",
-  "version": "3.3.0",
+  "version": "3.3.1",
   "description": "The ApigeeToOpenAPI tool is designed to parse the Apigee Proxy Bundle and generate corresponding OpenAPI specifications.",
   "type": "module",
   "main": "apigeetoopenapi.js",
