@@ -17,6 +17,10 @@ async function genopenapi(location, answers, xmlFile, cb) {
     openapiJson.info.description = reply.APIProxy.Description ? reply.APIProxy.Description[0] : '';
     openapiJson.info.version = (reply.APIProxy.$.revision || '1') + '.0.0';
     openapiJson.info.title = reply.APIProxy.DisplayName ? reply.APIProxy.DisplayName[0] : answers.name;
+    if (openapiJson.info.title === '') {
+      openapiJson.info.title = answers.name;
+    }
+    console.log(reply.APIProxy.DisplayName[0]);
   } catch (ex) {
     console.log(ex);
   }
