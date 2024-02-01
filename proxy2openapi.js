@@ -226,7 +226,7 @@ async function genopenapi(location, answers, xmlFile, cb) {
         for (const stepKey in openapiPath.Response[0].Step) {
           const flowStepPath = JSON.parse(JSON.stringify(openapiPath.Response[0].Step[stepKey]));
           if (flowStepPath.Name[0].includes('OAS')) {
-            const replyStep = await loadXMLDoc(location + '/apiproxy/policies/' + flowStepPath.Name + '.xml');
+            const replyStep = await loadXMLDoc(location + '/policies/' + flowStepPath.Name + '.xml');
             // Check if this is Assign Message policy
             if (replyStep.AssignMessage) {
               // If source is 'response' then capture as parameters
