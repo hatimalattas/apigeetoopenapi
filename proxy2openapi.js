@@ -15,7 +15,6 @@ async function genopenapi(location, answers, xmlFile, cb) {
   openapiJson.info = {};
   try {
     openapiJson.info.description = reply.APIProxy.Description ? reply.APIProxy.Description[0] : '';
-    openapiJson.info.version = (reply.APIProxy.$.revision || '1') + '.0.0';
     openapiJson.info.title = reply.APIProxy.DisplayName ? reply.APIProxy.DisplayName[0] : answers.name;
     if (openapiJson.info.title === '') {
       openapiJson.info.title = answers.name;
@@ -31,13 +30,17 @@ async function genopenapi(location, answers, xmlFile, cb) {
   openapiJson.servers = servers;
 
   const replyProxy = await loadXMLDoc(xmlFile);
-  // Add base path
   try {
+    // Add base path
     const basePath = replyProxy.ProxyEndpoint.HTTPProxyConnection[0].BasePath[0];
     servers.push({
       url: protocol.substring(0, protocol.length - 1) + '://' + proxy.host + basePath,
     });
+    // Add version
+    const version = /\/([^/]+)\/?$/.exec(basePath);
+    openapiJson.info.version = version ? version[1] : '';
   } catch (ex) {
+    openapiJson.info.version = "";
     console.log(ex);
   }
 
