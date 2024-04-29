@@ -49,7 +49,7 @@ async function genopenapi(location, answers, xmlFile, cb) {
   for (const key in replyProxy.ProxyEndpoint.Flows[0].Flow) {
     const openapiPath = JSON.parse(JSON.stringify(replyProxy.ProxyEndpoint.Flows[0].Flow[key]));
     if (openapiPath['Condition'] !== null && openapiPath['Condition'] !== undefined) {
-      console.log(openapiPath)
+      // console.log(openapiPath)
       const flowCondition = openapiPath['Condition'].pop();
       // Get Path & Verb...
       const rxVerb = /request.verb = "(.*?)"/g;
