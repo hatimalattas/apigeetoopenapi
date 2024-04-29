@@ -434,16 +434,16 @@ function createErrorResponse(errorList) {
           type: 'string',
           description: 'A message providing more details about the error.',
         },
-        trackingId: {
+        tracking_id: {
           type: 'string',
           description: 'A unique identifier for this error.',
         },
       },
-      required: ['code', 'message', 'trackingId'],
+      required: ['code', 'message', 'tracking_id'],
       example: {
         code: error.code,
         message: error.message,
-        trackingId: '-04-630999-158927-2',
+        tracking_id: '-04-630999-158927-2',
       },
     };
   } else {
@@ -460,11 +460,11 @@ function createErrorResponse(errorList) {
           description: 'A message providing more details about the error.',
         },
       },
-      required: ['code', 'message', 'trackingId'],
+      required: ['code', 'message', 'tracking_id'],
       example: {
         code: error.code,
         message: error.message,
-        trackingId: '-04-630999-158927-2',
+        tracking_id: '-04-630999-158927-2',
       },
     }));
 
@@ -476,7 +476,7 @@ function createErrorResponse(errorList) {
         value: {
           code: error.code,
           message: error.message,
-          trackingId: '-04-630999-158927-2',
+          tracking_id: '-04-630999-158927-2',
         },
       };
       return examples;
