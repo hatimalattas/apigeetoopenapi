@@ -103,28 +103,29 @@ async function genopenapi(location, answers, xmlFile, cb) {
         for (const stepKey in openapiPath.Request[0].Step) {
           const flowStepPath = JSON.parse(JSON.stringify(openapiPath.Request[0].Step[stepKey]));
           const replyStep = await loadXMLDoc(location + '/policies/' + flowStepPath.Name + '.xml');
-          // Check if this is Extract letiables policy
-          if (replyStep.Extractletiables) {
+          // Check if this is Extract variables policy
+          // console.log(replyStep);
+          if (replyStep.ExtractVariables) {
             // If source is 'request' then capture as parameters
             let source = '';
-            if (!replyStep.Extractletiables.Source) {
+            if (!replyStep.ExtractVariables.Source) {
               // If source is not defined and since we are in Request flow then default is request
               source = 'request';
-            } else if (replyStep.Extractletiables.Source[0]['_']) {
+            } else if (replyStep.ExtractVariables.Source[0]['_']) {
               // If source include att, then capture content as such
-              source = replyStep.Extractletiables.Source[0]['_'];
+              source = replyStep.ExtractVariables.Source[0]['_'];
             } else {
               // Otherwise just read content
-              source = replyStep.Extractletiables.Source;
+              source = replyStep.ExtractVariables.Source;
             }
             if (source === 'request') {
               try {
                 // Capture Header parameters
                 addParametersAndRequestBody(
-                  replyStep.Extractletiables.Header,
+                  replyStep.ExtractVariables.Header,
                   'header',
                   openapiJson.paths[resourcePath][resourceVerb],
-                  replyStep.Extractletiables['IgnoreUnresolvedletiables'][0]
+                  replyStep.ExtractVariables['IgnoreUnresolvedVariables'][0]
                 );
               } catch (error) {
                 console.log(error.message);
@@ -132,10 +133,10 @@ async function genopenapi(location, answers, xmlFile, cb) {
               try {
                 // Capture QueryParam
                 addParametersAndRequestBody(
-                  replyStep.Extractletiables.QueryParam,
+                  replyStep.ExtractVariables.QueryParam,
                   'query',
                   openapiJson.paths[resourcePath][resourceVerb],
-                  replyStep.Extractletiables['IgnoreUnresolvedletiables'][0]
+                  replyStep.ExtractVariables['IgnoreUnresolvedVariables'][0]
                 );
               } catch (error) {
                 console.log(error.message);
@@ -143,21 +144,22 @@ async function genopenapi(location, answers, xmlFile, cb) {
               try {
                 // Capture FormParam
                 addParametersAndRequestBody(
-                  replyStep.Extractletiables.FormParam,
+                  replyStep.ExtractVariables.FormParam,
                   'formData',
                   openapiJson.paths[resourcePath][resourceVerb],
-                  replyStep.Extractletiables['IgnoreUnresolvedletiables'][0]
+                  replyStep.ExtractVariables['IgnoreUnresolvedVariables'][0]
                 );
               } catch (error) {
                 console.log(error.message);
               }
               try {
                 // Capture JSON Body
+                // console.log(replyStep.ExtractVariables.JSONPayload[0]);
                 addParametersAndRequestBody(
-                  replyStep.Extractletiables.JSONPayload[0]['letiable'],
+                  replyStep.ExtractVariables.JSONPayload[0]['Variable'],
                   'requestBody',
                   openapiJson.paths[resourcePath][resourceVerb],
-                  replyStep.Extractletiables['IgnoreUnresolvedletiables'][0]
+                  replyStep.ExtractVariables['IgnoreUnresolvedVariables'][0]
                 );
               } catch (error) {
                 console.log(error.message);
@@ -169,9 +171,9 @@ async function genopenapi(location, answers, xmlFile, cb) {
           let errorPayload;
           if (replyStep.RaiseFault) {
             try {
-              if (Object.prototype.hasOwnProperty.call(replyStep.RaiseFault.FaultResponse[0], 'Assignletiable')) {
-                errorMessage = replyStep.RaiseFault.FaultResponse[0].Assignletiable[0].Value[0];
-                errorCode = replyStep.RaiseFault.FaultResponse[0].Assignletiable[1].Value[0];
+              if (Object.prototype.hasOwnProperty.call(replyStep.RaiseFault.FaultResponse[0], 'AssignVariable')) {
+                errorMessage = replyStep.RaiseFault.FaultResponse[0].AssignVariable[0].Value[0];
+                errorCode = replyStep.RaiseFault.FaultResponse[0].AssignVariable[1].Value[0];
               } else {
                 errorMessage = JSON.parse(replyStep.RaiseFault.FaultResponse[0].Set[0]['Payload'][0]['_'])['error_message'];
                 errorCode = replyStep.RaiseFault.FaultResponse[0].Set[0]['StatusCode'][0];
@@ -294,8 +296,8 @@ async function genopenapi(location, answers, xmlFile, cb) {
   });
 }
 
-function addParametersAndRequestBody(paramArr, openapiType, openapiPath, ignoreUnresolvedletiables) {
-  const isRequired = ignoreUnresolvedletiables !== 'true';
+function addParametersAndRequestBody(paramArr, openapiType, openapiPath, IgnoreUnresolvedVariables) {
+  const isRequired = IgnoreUnresolvedVariables !== 'true';
 
   // Handling requestBody separately
   if (openapiType === 'requestBody') {
