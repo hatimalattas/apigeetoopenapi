@@ -10,12 +10,14 @@ program
   .option('-o, --output <file>', 'Outout path for the openapi spec')
   .option('-i, --input <file>', 'Path to your bundle.zip file or apiproxy directory')
   .option('-n, --name <API name>', 'API proxy name. Required if local bundle is used')
-  .option('-b, --baseUrl <API proxy base URL>', 'API proxy URL e.g. https://api.exmaple.com. Required if local bundle is used.')
+  .option('-b, --baseUrl <API proxy base URL>', 'One or more API proxy base URLs. Required if local bundle is used. Separate multiple URLs with a comma.', commaSeparatedList)
   .option('-a, --auth <type>', 'Specify the authentication type (basic, apiKey, oauth2, none).')
   .description('Generates openapi 3.0.0 Spec from Apigee Proxy');
 
 program.parse(process.argv);
 const options = program.opts();
+
+console.log(options);
 
 checkRequiredOptions();
 
@@ -51,3 +53,6 @@ function checkRequiredOptions() {
   }
 }
 
+function commaSeparatedList(value, dummyPrevious) {
+  return value.split(',');
+}

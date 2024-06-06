@@ -19,7 +19,7 @@ async function genopenapi(location, answers, xmlFile, cb) {
     if (openapiJson.info.title === '') {
       openapiJson.info.title = answers.name;
     }
-    console.log(reply.APIProxy.DisplayName[0]);
+    // console.log(reply.APIProxy.DisplayName[0]);
   } catch (ex) {
     console.log(ex);
   }
@@ -154,7 +154,6 @@ async function genopenapi(location, answers, xmlFile, cb) {
               }
               try {
                 // Capture JSON Body
-                // console.log(replyStep.ExtractVariables.JSONPayload[0]);
                 addParametersAndRequestBody(
                   replyStep.ExtractVariables.JSONPayload[0]['Variable'],
                   'requestBody',
@@ -296,10 +295,22 @@ async function genopenapi(location, answers, xmlFile, cb) {
   });
 }
 
+
 function addParametersAndRequestBody(paramArr, openapiType, openapiPath, IgnoreUnresolvedVariables) {
   const isRequired = IgnoreUnresolvedVariables !== 'true';
 
-  // Handling requestBody separately
+  const typeMapping = {
+    'nodeset': 'object',
+    'float': 'number',
+    'long': 'number',
+    'double': 'number',
+    // Add more mappings as needed
+  };
+
+  function convertType(paramType) {
+    return typeMapping[paramType] || paramType || 'string';
+  }
+
   if (openapiType === 'requestBody') {
     if (!openapiPath.requestBody) {
       openapiPath.requestBody = {
@@ -309,7 +320,7 @@ function addParametersAndRequestBody(paramArr, openapiType, openapiPath, IgnoreU
             schema: {
               type: 'object',
               properties: {},
-              // required array can be added if needed
+              required: [],
             },
           },
         },
@@ -319,32 +330,45 @@ function addParametersAndRequestBody(paramArr, openapiType, openapiPath, IgnoreU
 
     paramArr.forEach((param) => {
       const paramName = param.$.name;
-      let paramType = param.$.type !== undefined ? param.$.type : 'string';
-      paramType = paramType === 'float' ? 'number' : paramType;
+      const paramType = convertType(param.$.type);
       const propertyDescription = param.$.description !== undefined ? param.$.description : '';
       const propertyPlaceholder = param.$.placeholder !== undefined ? param.$.placeholder : '';
 
-      requestBodySchema.properties[paramName] = {
-        type: paramType,
-        description: propertyDescription,
-        example: propertyPlaceholder,
-      };
-      // If you need to keep track of required properties in requestBody
-      if (isRequired) {
-        requestBodySchema.required = requestBodySchema.required || [];
-        requestBodySchema.required.push(paramName);
-      }
+      // Handle nested properties
+      const nestedProperties = paramName.split('.');
+      let currentSchema = requestBodySchema;
+      nestedProperties.forEach((property, index) => {
+        if (!currentSchema.properties[property]) {
+          currentSchema.properties[property] = {
+            type: (index === nestedProperties.length - 1) ? paramType : 'object',
+            description: (index === nestedProperties.length - 1) ? propertyDescription : undefined,
+            example: (index === nestedProperties.length - 1) ? propertyPlaceholder : undefined,
+          };
+          
+          if (index !== nestedProperties.length - 1) {
+            currentSchema.properties[property].properties = {};
+            currentSchema.properties[property].required = [];
+          }
+        }
+
+        if (isRequired && index === nestedProperties.length - 1) {
+          currentSchema.required.push(property);
+        }
+
+        // Move to the next level of nesting if not the last property
+        if (index < nestedProperties.length - 1) {
+          currentSchema = currentSchema.properties[property];
+        }
+      });
     });
   } else {
-    // Handling other parameter types (header, query, path, cookie)
     if (!openapiPath.parameters) {
       openapiPath.parameters = [];
     }
 
     paramArr.forEach((param) => {
       const paramName = param.$.name;
-      let paramType = param.$.type !== undefined ? param.$.type : 'string';
-      paramType = paramType === 'float' ? 'number' : paramType;
+      const paramType = convertType(param.$.type);
       const paramDescription = param.$.description !== undefined ? param.$.description : '';
       const paramPlaceholder = param.$.placeholder !== undefined ? param.$.placeholder : '';
 
