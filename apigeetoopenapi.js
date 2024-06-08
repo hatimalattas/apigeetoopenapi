@@ -12,12 +12,12 @@ program
   .option('-n, --name <API name>', 'API proxy name. Required if local bundle is used')
   .option('-b, --baseUrl <API proxy base URL>', 'One or more API proxy base URLs. Required if local bundle is used. Separate multiple URLs with a comma.', commaSeparatedList)
   .option('-a, --auth <type>', 'Specify the authentication type (basic, apiKey, oauth2, none).')
+  .option('-t, --tokenUrl <tokenUrl>', 'OAuth2 token URL. Required if auth type is oauth2.')
+  // .option('-s, --scopes <scopes>', 'OAuth2 scopes. Required if auth type is oauth2. Separate multiple scopes with a comma.', commaSeparatedList)
   .description('Generates openapi 3.0.0 Spec from Apigee Proxy');
 
 program.parse(process.argv);
 const options = program.opts();
-
-console.log(options);
 
 checkRequiredOptions();
 
@@ -49,6 +49,10 @@ function checkRequiredOptions() {
   }
   if (!options.auth) {
     console.log('Authentication type is required');
+    process.exit(1);
+  }
+  if (options.auth === 'oauth2' && !options.tokenUrl) {
+    console.log('Token URL is required for OAuth2 authentication');
     process.exit(1);
   }
 }
