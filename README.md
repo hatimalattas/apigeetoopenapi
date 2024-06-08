@@ -126,7 +126,8 @@ Example
     - `-o, --output <file>`: Output path for the openapi spec.
     - `-n, --name <API name>`: Name of the API proxy.
     - `-b, --baseurl <API proxy endpoint>`: Base URL of the API proxy.
-    - `-a, --auth <type>`: Authentication type (basic, apiKey, oauth2, none).
+    - `-a, --auth <type>`: Authentication type (basic, apiKey, bearer, oauth2, none).
+    - `-t, --tokenUrl <tokenUrl>`, 'OAuth2 token URL. Required if auth type is oauth2 (https://example.com/token).'
 
 ## Conclusion
 
