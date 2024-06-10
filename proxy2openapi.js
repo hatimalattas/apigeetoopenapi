@@ -557,6 +557,7 @@ function addSecuritySchema(openAPIObj, authType, tokenUrl, scopes) {
         type: 'http',
         scheme: 'bearer',
       };
+      break;
     case 'oauth2':
       securitySchemeKey = 'oauth2ClientCredentials';
       openAPIObj.components.securitySchemes.oauth2ClientCredentials = {
