@@ -548,7 +548,7 @@ function addSecuritySchema(openAPIObj, authType) {
       openAPIObj.components.securitySchemes.apiKeyAuth = {
         type: 'apiKey',
         in: 'header',
-        name: 'X-API-Key',
+        name: 'apikey',
       };
       break;
     case 'oauth2':
