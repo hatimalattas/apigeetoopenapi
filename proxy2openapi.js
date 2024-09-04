@@ -19,23 +19,24 @@ async function genopenapi(location, answers, xmlFile, cb) {
     if (openapiJson.info.title === '') {
       openapiJson.info.title = answers.name;
     }
-    // console.log(reply.APIProxy.DisplayName[0]);
   } catch (ex) {
     console.log(ex);
   }
   // Host & BasePath Section..
-  const proxy = url.parse(answers.baseUrl);
   const servers = [];
-  const protocol = proxy.protocol ? proxy.protocol : 'http';
   openapiJson.servers = servers;
 
   const replyProxy = await loadXMLDoc(xmlFile);
   try {
     // Add base path
     const basePath = replyProxy.ProxyEndpoint.HTTPProxyConnection[0].BasePath[0];
-    servers.push({
-      url: protocol.substring(0, protocol.length - 1) + '://' + proxy.host + basePath,
-    });
+    for (const baseUrl of answers.baseUrl) {
+      const proxy = url.parse(baseUrl);
+      const protocol = proxy.protocol ? proxy.protocol : 'http';
+      servers.push({
+        url: protocol.substring(0, protocol.length - 1) + '://' + proxy.host + basePath,
+      });
+    }
     // Add version
     const version = /\/([^/]+)\/?$/.exec(basePath);
     openapiJson.info.version = version ? version[1] : '';
@@ -49,7 +50,6 @@ async function genopenapi(location, answers, xmlFile, cb) {
   for (const key in replyProxy.ProxyEndpoint.Flows[0].Flow) {
     const openapiPath = JSON.parse(JSON.stringify(replyProxy.ProxyEndpoint.Flows[0].Flow[key]));
     if (openapiPath['Condition'] !== null && openapiPath['Condition'] !== undefined) {
-      // console.log(openapiPath)
       const flowCondition = openapiPath['Condition'].pop();
       // Get Path & Verb...
       const rxVerb = /request.verb = "(.*?)"/g;
@@ -104,7 +104,6 @@ async function genopenapi(location, answers, xmlFile, cb) {
           const flowStepPath = JSON.parse(JSON.stringify(openapiPath.Request[0].Step[stepKey]));
           const replyStep = await loadXMLDoc(location + '/policies/' + flowStepPath.Name + '.xml');
           // Check if this is Extract variables policy
-          // console.log(replyStep);
           if (replyStep.ExtractVariables) {
             // If source is 'request' then capture as parameters
             let source = '';
@@ -275,7 +274,7 @@ async function genopenapi(location, answers, xmlFile, cb) {
 
 
   // Add Security Schema
-  addSecuritySchema(openapiJson, answers.auth);
+  addSecuritySchema(openapiJson, answers.auth, answers.tokenUrl);
 
   const rxJsonName = /proxies\/(.*?).xml/g;
   const jsonNameArr = rxJsonName.exec(xmlFile);
@@ -523,7 +522,7 @@ function getType(value) {
   }
 }
 
-function addSecuritySchema(openAPIObj, authType) {
+function addSecuritySchema(openAPIObj, authType, tokenUrl, scopes) {
   if (!authType) {
     return;
   }
@@ -551,13 +550,27 @@ function addSecuritySchema(openAPIObj, authType) {
         name: 'apikey',
       };
       break;
-    case 'oauth2':
+    case 'bearer':
       securitySchemeKey = 'bearerAuth';
       // Bearer token authentication
       openAPIObj.components.securitySchemes.bearerAuth = {
         type: 'http',
         scheme: 'bearer',
-        // bearerFormat: 'JWT'  // Assuming JWT tokens, can be omitted if a different format
+      };
+      break;
+    case 'oauth2':
+      securitySchemeKey = 'oauth2ClientCredentials';
+      openAPIObj.components.securitySchemes.oauth2ClientCredentials = {
+        type: 'oauth2',
+        flows: {
+          clientCredentials: {
+            tokenUrl: tokenUrl,
+            // scopes: {
+            //   read: 'Grants read access',
+            //   write: 'Grants write access',
+            // },
+          },
+        },
       };
       break;
     case 'none':
