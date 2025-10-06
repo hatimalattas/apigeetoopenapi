@@ -35,7 +35,6 @@ export const AUTH_TYPES = {
 };
 
 export const TYPE_MAPPING = {
-  nodeset: 'object',
   float: 'number',
   long: 'number',
   double: 'number',
