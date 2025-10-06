@@ -1,7 +1,7 @@
 {
   "name": "apigeetoopenapi",
-  "version": "4.0.0",
-  "description": "The ApigeeToOpenAPI tool is designed to parse the Apigee Proxy Bundle and generate corresponding OpenAPI specifications.",
+  "version": "5.1.0",
+  "description": "A powerful CLI tool that converts Apigee Proxy Bundles into OpenAPI 3.0.0 specifications with support for nested JSON, multiple auth types, and modular architecture.",
   "type": "module",
   "main": "apigeetoopenapi.js",
   "homepage": "https://github.com/hatimalattas/ApigeeToOpenAPI",
@@ -24,12 +24,23 @@
   },
   "repository": {
     "type": "git",
-    "url": "apigeetoopenapi"
+    "url": "https://github.com/hatimalattas/ApigeeToOpenAPI.git"
+  },
+  "bugs": {
+    "url": "https://github.com/hatimalattas/ApigeeToOpenAPI/issues"
   },
   "keywords": [
+    "apigee",
+    "openapi",
+    "swagger",
+    "api-documentation",
+    "proxy-bundle",
     "apigee2openapi",
     "apigeetoopenapi",
-    "apigeex2openapi"
+    "apigeex2openapi",
+    "cli-tool",
+    "json-schema",
+    "api-spec"
   ],
   "author": "Hatim Alattas <hatimalattas@outlook.com>",
   "license": "MIT"

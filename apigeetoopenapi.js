@@ -13,7 +13,6 @@ program
   .option('-b, --baseUrl <API proxy base URL>', 'One or more API proxy base URLs. Required if local bundle is used. Separate multiple URLs with a comma.', commaSeparatedList)
   .option('-a, --auth <type>', 'Specify the authentication type (basic, apiKey, oauth2, none).')
   .option('-t, --tokenUrl <tokenUrl>', 'OAuth2 token URL (https://example.com/token). Required if auth type is oauth2.')
-  // .option('-s, --scopes <scopes>', 'OAuth2 scopes. Required if auth type is oauth2. Separate multiple scopes with a comma.', commaSeparatedList)
   .description('Generates openapi 3.0.0 Spec from Apigee Proxy');
 
 program.parse(process.argv);

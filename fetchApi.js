@@ -1,5 +1,5 @@
 import * as unzip from 'node-unzip-2';
-import genopenapi from './proxy2openapi.js';
+import { genopenapi } from './src/index.js';
 import glob from 'glob';
 import async from 'async';
 import path from 'path';
