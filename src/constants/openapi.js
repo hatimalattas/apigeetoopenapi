@@ -40,5 +40,18 @@ export const TYPE_MAPPING = {
   double: 'number',
   integer: 'integer',
   string: 'string',
-  boolean: 'boolean'
+  boolean: 'boolean',
+  nodeset: 'array',
+  object: 'object'
+};
+
+export const ARRAY_ITEM_TYPES = {
+  string: 'string',
+  integer: 'integer',
+  number: 'number',
+  boolean: 'boolean',
+  object: 'object',
+  float: 'number',
+  long: 'number',
+  double: 'number'
 };

@@ -53,15 +53,26 @@ export class ParameterGenerator {
 
     paramArr.forEach(param => {
       const paramName = param.$.name;
-      const paramType = TypeUtils.convertType(param.$.type);
+      const paramType = param.$.type;
       const description = param.$.description || '';
       const placeholder = param.$.placeholder || '';
 
-      this.addNestedProperty(requestBodySchema, paramName, {
-        type: paramType,
-        description,
-        example: placeholder
-      }, isRequired);
+      // Create property definition
+      let propertyDef;
+
+      if (TypeUtils.isArrayType(paramType)) {
+        // Handle array types
+        propertyDef = this.createArrayPropertyDefinition(param, description, placeholder);
+      } else {
+        // Handle regular types
+        propertyDef = {
+          type: TypeUtils.convertType(paramType),
+          description,
+          example: placeholder
+        };
+      }
+
+      this.addNestedProperty(requestBodySchema, paramName, propertyDef, isRequired);
     });
   }
 
@@ -79,19 +90,35 @@ export class ParameterGenerator {
 
     paramArr.forEach(param => {
       const paramName = param.$.name;
-      const paramType = TypeUtils.convertType(param.$.type);
+      const paramType = param.$.type;
       const description = param.$.description || '';
       const placeholder = param.$.placeholder || '';
+
+      let schema;
+      let example = placeholder;
+
+      if (TypeUtils.isArrayType(paramType)) {
+        // Handle array types for parameters
+        const arrayDef = this.createArrayPropertyDefinition(param, description, placeholder);
+        schema = {
+          type: arrayDef.type,
+          items: arrayDef.items
+        };
+        example = arrayDef.example;
+      } else {
+        // Handle regular types
+        schema = {
+          type: TypeUtils.convertType(paramType)
+        };
+      }
 
       const parameterObj = {
         name: paramName,
         in: location,
         description,
         required: isRequired,
-        schema: {
-          type: paramType
-        },
-        example: placeholder
+        schema,
+        example
       };
 
       operation.parameters.push(parameterObj);
@@ -132,6 +159,44 @@ export class ParameterGenerator {
         currentSchema = currentSchema.properties[property];
       }
     });
+  }
+
+  /**
+   * Create array property definition
+   * @param {Object} param - Parameter object with array info
+   * @param {string} description - Parameter description
+   * @param {string} placeholder - Parameter placeholder/example
+   * @returns {Object} Array property definition
+   */
+  static createArrayPropertyDefinition(param, description, placeholder) {
+    const itemType = param.$.itemType;
+    let items;
+    let example = null;
+
+    // Parse JSON placeholder if provided
+    if (placeholder) {
+      example = TypeUtils.parseJsonPlaceholder(placeholder);
+    }
+
+    // Handle different itemType scenarios
+    if (!itemType || itemType === 'object') {
+      // Default to object array
+      items = { type: 'object' };
+    } else if (itemType.includes(',')) {
+      // Multiple types (mixed array) - use anyOf
+      const typeObjects = TypeUtils.parseMultipleItemTypes(itemType);
+      items = { anyOf: typeObjects };
+    } else {
+      // Single item type
+      items = { type: TypeUtils.convertArrayItemType(itemType) };
+    }
+
+    return {
+      type: 'array',
+      items,
+      description,
+      example
+    };
   }
 
   /**

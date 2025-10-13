@@ -178,6 +178,81 @@ The tool extracts API parameters from `ExtractVariables` policies in request flo
 </ExtractVariables>
 ```
 
+#### Array Parameters
+The tool supports array parameters using `type="nodeset"` with custom `itemType` attribute:
+
+```xml
+<ExtractVariables name="EV-ExtractArrays">
+    <JSONPayload>
+        <!-- Integer array -->
+        <Variable name="userIds" type="nodeset" itemType="integer"
+                  description="Array of user IDs"
+                  placeholder="[1, 2, 3, 4, 5]">
+            <JSONPath>$.userIds</JSONPath>
+        </Variable>
+
+        <!-- Object array -->
+        <Variable name="users" type="nodeset" itemType="object"
+                  description="Array of user objects"
+                  placeholder='[{"id": 1, "name": "John"}, {"id": 2, "name": "Jane"}]'>
+            <JSONPath>$.users</JSONPath>
+        </Variable>
+
+        <!-- String array -->
+        <Variable name="categories" type="nodeset" itemType="string"
+                  description="Product categories"
+                  placeholder='["electronics", "books", "clothing"]'>
+            <JSONPath>$.categories</JSONPath>
+        </Variable>
+
+        <!-- Mixed type array -->
+        <Variable name="mixedData" type="nodeset" itemType="string,integer,boolean"
+                  description="Mixed type array"
+                  placeholder='["hello", 42, true, "world", 99, false]'>
+            <JSONPath>$.mixedData</JSONPath>
+        </Variable>
+    </JSONPayload>
+    <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+    <Source>request</Source>
+</ExtractVariables>
+```
+
+**Array ItemTypes Supported:**
+- `string` - Array of strings
+- `integer` - Array of integers
+- `number` - Array of numbers
+- `boolean` - Array of booleans
+- `object` - Array of objects (default if not specified)
+- `string,integer,boolean` - Mixed arrays (comma-separated types)
+
+**Generated OpenAPI Schema Examples:**
+
+For `itemType="integer"`:
+```json
+{
+  "type": "array",
+  "items": {
+    "type": "integer"
+  },
+  "example": [1, 2, 3, 4, 5]
+}
+```
+
+For `itemType="string,integer,boolean"`:
+```json
+{
+  "type": "array",
+  "items": {
+    "anyOf": [
+      {"type": "string"},
+      {"type": "integer"},
+      {"type": "boolean"}
+    ]
+  },
+  "example": ["hello", 42, true]
+}
+```
+
 #### Required vs Optional Parameters
 
 Parameters are marked as required/optional based on `IgnoreUnresolvedVariables`:
@@ -196,8 +271,12 @@ The `type` attribute is only supported for JSON payload variables. The tool supp
 | `float` | `number` | Floating-point numbers |
 | `double` | `number` | Double-precision numbers |
 | `long` | `number` | Long integer numbers |
+| `nodeset` | `array` | Array of values (requires `itemType` attribute) |
+| `object` | `object` | Object values |
 
 **Default Behavior**: If no `type` attribute is specified, the parameter defaults to `string` type.
+
+**Array Types**: When using `type="nodeset"`, you must specify the `itemType` attribute to define what type of items the array contains.
 
 **Note**:
 - Query parameters, headers, and form parameters are automatically typed as strings in the OpenAPI specification

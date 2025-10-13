@@ -1,4 +1,4 @@
-import { TYPE_MAPPING } from '../constants/openapi.js';
+import { TYPE_MAPPING, ARRAY_ITEM_TYPES } from '../constants/openapi.js';
 
 /**
  * Type utility functions
@@ -49,5 +49,57 @@ export class TypeUtils {
    */
   static safeArrayAccess(arr, index = 0) {
     return Array.isArray(arr) && arr.length > index ? arr[index] : undefined;
+  }
+
+  /**
+   * Convert array item type to OpenAPI type
+   * @param {string} itemType - Array item type
+   * @returns {string} OpenAPI type
+   */
+  static convertArrayItemType(itemType) {
+    return ARRAY_ITEM_TYPES[itemType] || itemType || 'string';
+  }
+
+  /**
+   * Parse comma-separated item types for mixed arrays
+   * @param {string} itemTypes - Comma-separated types (e.g., "string,integer,boolean")
+   * @returns {Array} Array of OpenAPI type objects
+   */
+  static parseMultipleItemTypes(itemTypes) {
+    if (!itemTypes || typeof itemTypes !== 'string') {
+      return [{ type: 'string' }];
+    }
+
+    const types = itemTypes.split(',').map(type => type.trim());
+    return types.map(type => ({
+      type: this.convertArrayItemType(type)
+    }));
+  }
+
+  /**
+   * Validate and parse JSON placeholder
+   * @param {string} placeholder - JSON string placeholder
+   * @returns {any} Parsed JSON or null if invalid
+   */
+  static parseJsonPlaceholder(placeholder) {
+    if (!placeholder || typeof placeholder !== 'string') {
+      return null;
+    }
+
+    try {
+      return JSON.parse(placeholder);
+    } catch (error) {
+      console.warn(`Invalid JSON placeholder: ${placeholder}`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Check if a type represents an array
+   * @param {string} type - Type to check
+   * @returns {boolean} True if type is array-like
+   */
+  static isArrayType(type) {
+    return type === 'nodeset' || TYPE_MAPPING[type] === 'array';
   }
 }

@@ -71,17 +71,17 @@ The main orchestrator that coordinates the entire conversion process:
 
 #### Generation Layer (`src/generators/`)
 - **OpenApiGenerator**: Creates core OpenAPI specification structure
-- **ParameterGenerator**: Handles parameters and request body generation, including nested JSON objects
+- **ParameterGenerator**: Handles parameters and request body generation, including nested JSON objects and array support
 - **ErrorGenerator**: Manages error response schemas from RaiseFault policies
 - **SecurityGenerator**: Configures authentication schemes (Basic, API Key, Bearer, OAuth2)
 
 #### Utilities (`src/utils/`)
 - **XMLLoader**: XML file loading and parsing with xml2js
-- **TypeUtils**: Type conversion, safe array access, validation utilities
+- **TypeUtils**: Type conversion, safe array access, validation utilities, array type detection and conversion
 
 #### Constants (`src/constants/`)
 - **errorCodes.js**: HTTP status codes and standard error messages
-- **openapi.js**: OpenAPI-related constants, content types, authentication types
+- **openapi.js**: OpenAPI-related constants, content types, authentication types, array item type mappings
 
 ### Data Flow
 
@@ -94,6 +94,33 @@ The main orchestrator that coordinates the entire conversion process:
 3. **Output**: Complete OpenAPI 3.0.0 specification saved as JSON
 
 ### Key Features
+
+#### Array Support
+The tool supports array parameters in ExtractVariables policies using the `nodeset` type with custom `itemType` attribute:
+
+```xml
+<ExtractVariables name="ExtractUserData">
+  <Source>request</Source>
+  <JSONPayload>
+    <!-- Integer array -->
+    <Variable name="userIds" type="nodeset" itemType="integer"
+              placeholder="[1, 2, 3, 4, 5]"
+              description="Array of user IDs" />
+
+    <!-- Object array -->
+    <Variable name="users" type="nodeset" itemType="object"
+              placeholder='[{"id": 1, "name": "John"}, {"id": 2, "name": "Jane"}]'
+              description="Array of user objects" />
+
+    <!-- Mixed type array -->
+    <Variable name="mixedData" type="nodeset" itemType="string,integer,boolean"
+              placeholder='["hello", 42, true]'
+              description="Mixed type array" />
+  </JSONPayload>
+</ExtractVariables>
+```
+
+Supported `itemType` values: `string`, `integer`, `number`, `boolean`, `object`, and comma-separated combinations for mixed arrays.
 
 #### Nested JSON Support
 The tool intelligently handles nested JSON objects in ExtractVariables policies. Dot notation in variable names (e.g., `individual.name_en`) automatically creates nested object structures in the OpenAPI schema.

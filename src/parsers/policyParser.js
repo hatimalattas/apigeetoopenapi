@@ -25,11 +25,42 @@ export class PolicyParser {
     return {
       source,
       ignoreUnresolved,
-      headers: extractVars.Header || [],
-      queryParams: extractVars.QueryParam || [],
-      formParams: extractVars.FormParam || [],
-      jsonPayload: extractVars.JSONPayload?.[0]?.Variable || null
+      headers: this.enhanceParametersWithArrayInfo(extractVars.Header || []),
+      queryParams: this.enhanceParametersWithArrayInfo(extractVars.QueryParam || []),
+      formParams: this.enhanceParametersWithArrayInfo(extractVars.FormParam || []),
+      jsonPayload: this.enhanceParametersWithArrayInfo(extractVars.JSONPayload?.[0]?.Variable || [])
     };
+  }
+
+  /**
+   * Enhance parameters with array information
+   * @param {Array} parameters - Array of parameter objects
+   * @returns {Array} Enhanced parameters with array info
+   */
+  enhanceParametersWithArrayInfo(parameters) {
+    if (!Array.isArray(parameters)) {
+      return [];
+    }
+
+    return parameters.map(param => {
+      if (!param || !param.$) {
+        return param;
+      }
+
+      const enhanced = { ...param };
+
+      // Extract itemType if it exists
+      if (param.$.itemType) {
+        enhanced.$.itemType = param.$.itemType;
+      }
+
+      // Check if this is an array type
+      if (TypeUtils.isArrayType(param.$.type)) {
+        enhanced.$.isArray = true;
+      }
+
+      return enhanced;
+    });
   }
 
   /**

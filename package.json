@@ -1,7 +1,7 @@
 {
   "name": "apigeetoopenapi",
-  "version": "5.1.1",
-  "description": "A powerful CLI tool that converts Apigee Proxy Bundles into OpenAPI 3.0.0 specifications with support for nested JSON, multiple auth types, and modular architecture.",
+  "version": "5.2.0",
+  "description": "A powerful CLI tool that converts Apigee Proxy Bundles into OpenAPI 3.0.0 specifications with support for nested JSON, array parameters, multiple auth types, and modular architecture.",
   "type": "module",
   "main": "apigeetoopenapi.js",
   "homepage": "https://github.com/hatimalattas/ApigeeToOpenAPI",
@@ -40,7 +40,10 @@
     "apigeex2openapi",
     "cli-tool",
     "json-schema",
-    "api-spec"
+    "api-spec",
+    "array-parameters",
+    "nested-objects",
+    "extractvariables"
   ],
   "author": "Hatim Alattas <hatimalattas@outlook.com>",
   "license": "MIT"
