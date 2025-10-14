@@ -49,7 +49,7 @@ export class Converter {
 
       // Add security schema
       const spec = this.openApiGenerator.getSpec();
-      SecurityGenerator.addSecuritySchema(spec, options.auth, options.tokenUrl, scopes);
+      SecurityGenerator.addSecuritySchema(spec, options.auth, options.tokenUrl, scopes, options.apiKeyHeader);
 
       return spec;
     } catch (error) {
@@ -161,6 +161,14 @@ export class Converter {
         const raiseFault = this.policyParser.parseRaiseFault(policy);
         if (raiseFault) {
           this.errorGenerator.addError(raiseFault);
+        }
+
+        // Process JavaScript policy for errors
+        const jsErrors = await this.policyParser.parseJavaScript(policy, location);
+        if (jsErrors.length > 0) {
+          jsErrors.forEach(error => {
+            this.errorGenerator.addError(error);
+          });
         }
       } catch (error) {
         console.warn(`Failed to process policy ${policyName}:`, error.message);

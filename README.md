@@ -65,6 +65,7 @@ apigeetoopenapi [options]
 
 #### Optional Options
 - `-t, --tokenUrl <url>` - OAuth2 token URL (required when using `--auth oauth2`)
+- `-k, --apiKeyHeader <name>` - Header name for API key authentication (defaults to "apikey")
 
 ### Examples
 
@@ -97,6 +98,17 @@ apigeetoopenapi \
   --name "Notification API" \
   --baseUrl "https://api.example.com/v1" \
   --auth bearer
+```
+
+#### Custom API Key Header
+```bash
+apigeetoopenapi \
+  --input ./api-bundle.zip \
+  --output ./docs \
+  --name "Payment API" \
+  --baseUrl "https://api.payment.com" \
+  --auth apiKey \
+  --apiKeyHeader "X-API-Key"
 ```
 
 ## 🔧 How It Works
@@ -362,6 +374,138 @@ Generate error response documentation from `RaiseFault` policies:
 
 The tool automatically generates error responses based on `error_code` and `error_message` variables.
 
+### JavaScript Error Handling
+
+Generate error response documentation from JavaScript policies that set error context variables:
+
+#### JavaScript Policy Structure
+```xml
+<Javascript name="ValidateUserRequest" timeLimit="200">
+    <DisplayName>Validate User Request Data</DisplayName>
+    <ResourceURL>jsc://validate-user-request.js</ResourceURL>
+</Javascript>
+```
+
+#### JavaScript File Content (validate-user-request.js)
+```javascript
+// Parse request data
+var requestData = JSON.parse(request.content);
+
+// Email validation
+if (!requestData.email) {
+    context.setVariable("error_message", "Email is required");
+    context.setVariable("error_code", 400);
+    throw new Error("Email validation failed");
+}
+
+// Age validation
+if (requestData.age < 18) {
+    context.setVariable("error_message", "User must be at least 18 years old");
+    context.setVariable("error_code", 403);
+    throw new Error("Age validation failed");
+}
+
+// Authorization check
+if (!hasPermission(requestData.userId)) {
+    context.setVariable("error_message", "Insufficient permissions for this operation");
+    context.setVariable("error_code", 403);
+    throw new Error("Authorization failed");
+}
+
+// Invalid format check
+if (!isValidFormat(requestData.data)) {
+    context.setVariable("error_message", "Invalid data format provided");
+    context.setVariable("error_code", 422);
+    throw new Error("Format validation failed");
+}
+```
+
+#### How It Works
+The tool automatically:
+1. **Detects JavaScript policies** in request flows
+2. **Loads JavaScript files** from `resources/jsc/` directory
+3. **Parses error patterns** using regex to find `context.setVariable` calls
+4. **Matches error messages with codes** based on their proximity in the code
+5. **Generates OpenAPI error responses** for each detected error scenario
+
+#### Supported Patterns
+The tool recognizes these JavaScript error patterns:
+
+```javascript
+// Standard pattern
+context.setVariable("error_message", "Your error message here");
+context.setVariable("error_code", 400);
+
+// Mixed quotes
+context.setVariable('error_message', 'Your error message here');
+context.setVariable('error_code', 400);
+
+// Extra spacing (automatically handled)
+context.setVariable( "error_message" , "Your error message here" );
+context.setVariable(  "error_code"  ,  400  );
+```
+
+#### Generated OpenAPI Error Responses
+From the JavaScript example above, the tool generates:
+
+```json
+{
+  "400": {
+    "description": "Bad Request",
+    "content": {
+      "application/json": {
+        "schema": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "error_message": {
+                  "type": "string",
+                  "example": "Email is required"
+                },
+                "error_code": {
+                  "type": "string",
+                  "example": "400"
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "403": {
+    "description": "Forbidden",
+    "content": {
+      "application/json": {
+        "schema": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "error_message": {
+                  "type": "string",
+                  "example": "User must be at least 18 years old"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "properties": {
+                "error_message": {
+                  "type": "string",
+                  "example": "Insufficient permissions for this operation"
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+```
+
 ## 🔐 Authentication Support
 
 Configure authentication schemes using the `-a` option:
@@ -371,7 +515,7 @@ Configure authentication schemes using the `-a` option:
 apigeetoopenapi ... --auth apiKey
 ```
 
-Generates:
+Generates (using default header name):
 ```yaml
 components:
   securitySchemes:
@@ -379,6 +523,21 @@ components:
       type: apiKey
       in: header
       name: apikey
+```
+
+#### Custom API Key Header Name
+```bash
+apigeetoopenapi ... --auth apiKey --apiKeyHeader "X-API-Key"
+```
+
+Generates:
+```yaml
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
 ```
 
 ### Basic Authentication

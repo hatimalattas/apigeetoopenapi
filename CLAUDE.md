@@ -33,6 +33,9 @@ npx apigeetoopenapi -i ./apiproxy -o ./output -n "API Name" -b "https://api.exam
 
 # Multiple base URLs
 npx apigeetoopenapi -i ./bundle.zip -o ./output -n "API Name" -b "https://dev.api.com,https://prod.api.com" -a bearer
+
+# Custom API key header
+npx apigeetoopenapi -i ./bundle.zip -o ./output -n "API Name" -b "https://api.example.com" -a apiKey -k "X-API-Key"
 ```
 
 ## Architecture Overview
@@ -67,12 +70,12 @@ The main orchestrator that coordinates the entire conversion process:
 
 #### Parsing Layer (`src/parsers/`)
 - **ApigeeParser**: Parses main API proxy XML, extracts base paths, versions, OAuth scopes
-- **PolicyParser**: Loads and parses individual policy files (ExtractVariables, RaiseFault, AssignMessage)
+- **PolicyParser**: Loads and parses individual policy files (ExtractVariables, RaiseFault, AssignMessage, JavaScript)
 
 #### Generation Layer (`src/generators/`)
 - **OpenApiGenerator**: Creates core OpenAPI specification structure
 - **ParameterGenerator**: Handles parameters and request body generation, including nested JSON objects and array support
-- **ErrorGenerator**: Manages error response schemas from RaiseFault policies
+- **ErrorGenerator**: Manages error response schemas from RaiseFault policies and JavaScript error patterns
 - **SecurityGenerator**: Configures authentication schemes (Basic, API Key, Bearer, OAuth2)
 
 #### Utilities (`src/utils/`)
@@ -132,17 +135,34 @@ The tool intelligently handles nested JSON objects in ExtractVariables policies.
 
 #### Security Configuration
 Supports multiple authentication types with automatic OpenAPI security scheme generation:
-- Basic Auth, API Key (header-based), Bearer tokens, OAuth2 client credentials
+- Basic Auth, API Key (header-based with configurable header name), Bearer tokens, OAuth2 client credentials
 
 ## Important Implementation Details
 
 ### Backward Compatibility
 The refactored code maintains backward compatibility through `src/proxy2openapi-refactored.js`, which wraps the new Converter class in the original function signature.
 
+#### JavaScript Error Handling
+The tool supports extracting error information from JavaScript policies:
+
+```xml
+<Javascript name="ValidateRequest" timeLimit="200">
+    <ResourceURL>jsc://validate-request.js</ResourceURL>
+</Javascript>
+```
+
+JavaScript files are parsed for error patterns like:
+```javascript
+context.setVariable("error_message", "Email is required");
+context.setVariable("error_code", 400);
+```
+
+The tool automatically generates OpenAPI error responses based on these patterns.
+
 ### Error Handling Strategy
 - Each component has defensive programming with null/undefined checks
 - Errors are logged but don't stop processing of other components
-- The ErrorGenerator accumulates errors from RaiseFault policies across all flows
+- The ErrorGenerator accumulates errors from RaiseFault policies and JavaScript files across all flows
 
 ### XML Processing Approach
 - Uses xml2js for parsing with UTF-8 encoding support

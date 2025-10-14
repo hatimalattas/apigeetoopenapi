@@ -145,6 +145,123 @@ export class PolicyParser {
   }
 
   /**
+   * Parse JavaScript policy
+   * @param {Object} policy - Parsed policy XML
+   * @param {string} location - Directory path
+   * @returns {Promise<Array>} Array of error objects
+   */
+  async parseJavaScript(policy, location) {
+    const javascript = policy.Javascript;
+    if (!javascript) { return []; }
+
+    try {
+      const resourceUrl = TypeUtils.safeArrayAccess(javascript.ResourceURL);
+      if (!resourceUrl) { return []; }
+
+      // Extract JavaScript file name from ResourceURL (e.g., "jsc://validate-request.js")
+      const jsFileName = resourceUrl.replace(/^jsc:\/\//, '');
+      const jsFilePath = `${location}/resources/jsc/${jsFileName}`;
+
+      // Load JavaScript file content
+      const jsContent = await this.loadJavaScriptFile(jsFilePath);
+      if (!jsContent) { return []; }
+
+      // Extract error patterns from JavaScript content
+      return this.extractJavaScriptErrors(jsContent);
+    } catch (error) {
+      console.warn('Failed to parse JavaScript policy:', error.message);
+      return [];
+    }
+  }
+
+  /**
+   * Load JavaScript file content
+   * @param {string} filePath - Path to JavaScript file
+   * @returns {Promise<string|null>} JavaScript content
+   */
+  async loadJavaScriptFile(filePath) {
+    try {
+      const fs = await import('fs');
+      return await fs.promises.readFile(filePath, 'utf8');
+    } catch (error) {
+      console.warn(`Failed to load JavaScript file ${filePath}:`, error.message);
+      return null;
+    }
+  }
+
+  /**
+   * Extract error patterns from JavaScript content
+   * @param {string} jsContent - JavaScript file content
+   * @returns {Array} Array of error objects
+   */
+  extractJavaScriptErrors(jsContent) {
+    const errors = [];
+
+    // Find all error_message and error_code pairs
+    const messagePattern = /context\.setVariable\s*\(\s*["']error_message["']\s*,\s*["']([^"']+)["']/g;
+    const codePattern = /context\.setVariable\s*\(\s*["']error_code["']\s*,\s*(\d+)\s*\)/g;
+
+    // Extract all error messages with their positions
+    const messages = [];
+    let messageMatch;
+    while ((messageMatch = messagePattern.exec(jsContent)) !== null) {
+      messages.push({
+        message: messageMatch[1],
+        position: messageMatch.index
+      });
+    }
+
+    // Extract all error codes with their positions
+    const codes = [];
+    let codeMatch;
+    while ((codeMatch = codePattern.exec(jsContent)) !== null) {
+      codes.push({
+        code: parseInt(codeMatch[1]),
+        position: codeMatch.index
+      });
+    }
+
+    // Match messages with their closest following error codes
+    messages.forEach((msgObj) => {
+      // Find the closest error code that comes after this message
+      let closestCode = 400; // default
+      let minDistance = Infinity;
+
+      codes.forEach(codeObj => {
+        if (codeObj.position > msgObj.position) {
+          const distance = codeObj.position - msgObj.position;
+          if (distance < minDistance) {
+            minDistance = distance;
+            closestCode = codeObj.code;
+          }
+        }
+      });
+
+      // If no code found after this message, try to find codes before it
+      if (minDistance === Infinity && codes.length > 0) {
+        // Use the most recent code before this message, or first available code
+        for (let i = codes.length - 1; i >= 0; i--) {
+          if (codes[i].position < msgObj.position) {
+            closestCode = codes[i].code;
+            break;
+          }
+        }
+        // If still no match, use the first available code
+        if (closestCode === 400 && codes.length > 0) {
+          closestCode = codes[0].code;
+        }
+      }
+
+      errors.push({
+        code: closestCode.toString(),
+        message: msgObj.message
+      });
+    });
+
+    return errors;
+  }
+
+  /**
    * Load and parse policy file
    * @param {string} location - Directory path
    * @param {string} policyName - Policy name

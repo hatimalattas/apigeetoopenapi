@@ -10,8 +10,9 @@ export class SecurityGenerator {
    * @param {string} authType - Authentication type
    * @param {string} tokenUrl - OAuth2 token URL
    * @param {Object} scopes - OAuth2 scopes
+   * @param {string} apiKeyHeader - Header name for API key authentication
    */
-  static addSecuritySchema(openAPIObj, authType, tokenUrl, scopes = {}) {
+  static addSecuritySchema(openAPIObj, authType, tokenUrl, scopes = {}, apiKeyHeader = 'apikey') {
     if (!authType || authType === AUTH_TYPES.NONE) {
       return;
     }
@@ -28,7 +29,8 @@ export class SecurityGenerator {
       openAPIObj.components.securitySchemes,
       authType,
       tokenUrl,
-      scopes
+      scopes,
+      apiKeyHeader
     );
 
     if (securitySchemeKey) {
@@ -42,9 +44,10 @@ export class SecurityGenerator {
    * @param {string} authType - Authentication type
    * @param {string} tokenUrl - OAuth2 token URL
    * @param {Object} scopes - OAuth2 scopes
+   * @param {string} apiKeyHeader - Header name for API key authentication
    * @returns {string|null} Security scheme key
    */
-  static createSecurityScheme(securitySchemes, authType, tokenUrl, scopes) {
+  static createSecurityScheme(securitySchemes, authType, tokenUrl, scopes, apiKeyHeader = 'apikey') {
     switch (authType) {
       case AUTH_TYPES.BASIC:
         securitySchemes.basicAuth = {
@@ -57,7 +60,7 @@ export class SecurityGenerator {
         securitySchemes.apiKeyAuth = {
           type: 'apiKey',
           in: 'header',
-          name: 'apikey'
+          name: apiKeyHeader
         };
         return 'apiKeyAuth';
 
