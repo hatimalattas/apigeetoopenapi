@@ -14,6 +14,7 @@ program
   .option('-a, --auth <type>', 'Specify the authentication type (basic, apiKey, oauth2, none).')
   .option('-t, --tokenUrl <tokenUrl>', 'OAuth2 token URL (https://example.com/token). Required if auth type is oauth2.')
   .option('-k, --apiKeyHeader <name>', 'Header name for API key authentication (defaults to "apikey").')
+  .option('-v, --verbose', 'Enable verbose output for debugging.')
   .description('Generates openapi 3.0.0 Spec from Apigee Proxy');
 
 program.parse(process.argv);

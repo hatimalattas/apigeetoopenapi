@@ -66,6 +66,7 @@ apigeetoopenapi [options]
 #### Optional Options
 - `-t, --tokenUrl <url>` - OAuth2 token URL (required when using `--auth oauth2`)
 - `-k, --apiKeyHeader <name>` - Header name for API key authentication (defaults to "apikey")
+- `-v, --verbose` - Enable verbose output for debugging
 
 ### Examples
 
@@ -109,6 +110,17 @@ apigeetoopenapi \
   --baseUrl "https://api.payment.com" \
   --auth apiKey \
   --apiKeyHeader "X-API-Key"
+```
+
+#### Verbose Mode for Debugging
+```bash
+apigeetoopenapi \
+  --input ./bundle.zip \
+  --output ./output \
+  --name "API Name" \
+  --baseUrl "https://api.example.com" \
+  --auth apiKey \
+  --verbose
 ```
 
 ## 🔧 How It Works

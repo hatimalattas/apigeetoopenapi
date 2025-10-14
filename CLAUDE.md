@@ -36,6 +36,9 @@ npx apigeetoopenapi -i ./bundle.zip -o ./output -n "API Name" -b "https://dev.ap
 
 # Custom API key header
 npx apigeetoopenapi -i ./bundle.zip -o ./output -n "API Name" -b "https://api.example.com" -a apiKey -k "X-API-Key"
+
+# Verbose mode for debugging
+npx apigeetoopenapi -i ./bundle.zip -o ./output -n "API Name" -b "https://api.example.com" -a apiKey --verbose
 ```
 
 ## Architecture Overview

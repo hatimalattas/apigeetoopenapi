@@ -1,6 +1,6 @@
 {
   "name": "apigeetoopenapi",
-  "version": "5.3.0",
+  "version": "5.4.0",
   "description": "A powerful CLI tool that converts Apigee Proxy Bundles into OpenAPI 3.0.0 specifications with support for nested JSON, array parameters, multiple auth types, and modular architecture.",
   "type": "module",
   "main": "apigeetoopenapi.js",
