@@ -11,7 +11,7 @@ program
   .option('-i, --input <file>', 'Path to your bundle.zip file or apiproxy directory')
   .option('-n, --name <API name>', 'API proxy name. Required if local bundle is used')
   .option('-b, --baseUrl <API proxy base URL>', 'One or more API proxy base URLs. Required if local bundle is used. Separate multiple URLs with a comma.', commaSeparatedList)
-  .option('-a, --auth <type>', 'Specify the authentication type (basic, apiKey, oauth2, none).')
+  .option('-a, --auth <type>', 'Specify the authentication type(s) (basic, apiKey, bearer, oauth2, none). Separate multiple types with a comma to allow any of them.', commaSeparatedList)
   .option('-t, --tokenUrl <tokenUrl>', 'OAuth2 token URL (https://example.com/token). Required if auth type is oauth2.')
   .option('-k, --apiKeyHeader <name>', 'Header name for API key authentication (defaults to "apikey").')
   .option('-v, --verbose', 'Enable verbose output for debugging.')
@@ -52,7 +52,7 @@ function checkRequiredOptions() {
     console.log('Authentication type is required');
     process.exit(1);
   }
-  if (options.auth === 'oauth2' && !options.tokenUrl) {
+  if (options.auth.includes('oauth2') && !options.tokenUrl) {
     console.log('Token URL is required for OAuth2 authentication');
     process.exit(1);
   }

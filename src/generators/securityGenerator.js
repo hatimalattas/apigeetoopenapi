@@ -13,7 +13,15 @@ export class SecurityGenerator {
    * @param {string} apiKeyHeader - Header name for API key authentication
    */
   static addSecuritySchema(openAPIObj, authType, tokenUrl, scopes = {}, apiKeyHeader = 'apikey') {
-    if (!authType || authType === AUTH_TYPES.NONE) {
+    if (!authType) {
+      return;
+    }
+
+    const authTypes = (Array.isArray(authType) ? authType : [authType])
+      .map(t => t && t.trim())
+      .filter(t => t && t !== AUTH_TYPES.NONE);
+
+    if (authTypes.length === 0) {
       return;
     }
 
@@ -25,16 +33,22 @@ export class SecurityGenerator {
       openAPIObj.components.securitySchemes = {};
     }
 
-    const securitySchemeKey = this.createSecurityScheme(
-      openAPIObj.components.securitySchemes,
-      authType,
-      tokenUrl,
-      scopes,
-      apiKeyHeader
-    );
+    const securitySchemeKeys = [];
+    for (const type of authTypes) {
+      const key = this.createSecurityScheme(
+        openAPIObj.components.securitySchemes,
+        type,
+        tokenUrl,
+        scopes,
+        apiKeyHeader
+      );
+      if (key && !securitySchemeKeys.includes(key)) {
+        securitySchemeKeys.push(key);
+      }
+    }
 
-    if (securitySchemeKey) {
-      this.applyGlobalSecurity(openAPIObj, securitySchemeKey);
+    if (securitySchemeKeys.length > 0) {
+      this.applyGlobalSecurity(openAPIObj, securitySchemeKeys);
     }
   }
 
@@ -99,10 +113,11 @@ export class SecurityGenerator {
    * @param {Object} openAPIObj - OpenAPI specification object
    * @param {string} securitySchemeKey - Security scheme key
    */
-  static applyGlobalSecurity(openAPIObj, securitySchemeKey) {
-    openAPIObj.security = [{
-      [securitySchemeKey]: []
-    }];
+  static applyGlobalSecurity(openAPIObj, securitySchemeKeys) {
+    const keys = Array.isArray(securitySchemeKeys) ? securitySchemeKeys : [securitySchemeKeys];
+    // Each entry is a separate requirement object => OR semantics
+    // (client may satisfy any one of the listed schemes).
+    openAPIObj.security = keys.map(key => ({ [key]: [] }));
   }
 
   /**
@@ -122,18 +137,23 @@ export class SecurityGenerator {
   static validateAuthConfig(authType, tokenUrl) {
     const result = { valid: true, errors: [] };
 
-    if (!authType) {
+    if (!authType || (Array.isArray(authType) && authType.length === 0)) {
       result.valid = false;
       result.errors.push('Authentication type is required');
       return result;
     }
 
-    if (!this.getSupportedAuthTypes().includes(authType)) {
-      result.valid = false;
-      result.errors.push(`Unsupported authentication type: ${authType}`);
+    const authTypes = Array.isArray(authType) ? authType : [authType];
+    const supported = this.getSupportedAuthTypes();
+
+    for (const type of authTypes) {
+      if (!supported.includes(type)) {
+        result.valid = false;
+        result.errors.push(`Unsupported authentication type: ${type}`);
+      }
     }
 
-    if (authType === AUTH_TYPES.OAUTH2 && !tokenUrl) {
+    if (authTypes.includes(AUTH_TYPES.OAUTH2) && !tokenUrl) {
       result.valid = false;
       result.errors.push('Token URL is required for OAuth2 authentication');
     }
