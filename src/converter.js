@@ -49,7 +49,7 @@ export class Converter {
 
       // Add security schema
       const spec = this.openApiGenerator.getSpec();
-      SecurityGenerator.addSecuritySchema(spec, options.auth, options.tokenUrl, scopes, options.apiKeyHeader);
+      SecurityGenerator.addSecuritySchema(spec, options.auth, options.tokenUrl, scopes, options.apiKeyHeader, options.authMode);
 
       return spec;
     } catch (error) {

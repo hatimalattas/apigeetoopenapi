@@ -12,7 +12,7 @@ export class SecurityGenerator {
    * @param {Object} scopes - OAuth2 scopes
    * @param {string} apiKeyHeader - Header name for API key authentication
    */
-  static addSecuritySchema(openAPIObj, authType, tokenUrl, scopes = {}, apiKeyHeader = 'apikey') {
+  static addSecuritySchema(openAPIObj, authType, tokenUrl, scopes = {}, apiKeyHeader = 'apikey', authMode = 'and') {
     if (!authType) {
       return;
     }
@@ -48,7 +48,7 @@ export class SecurityGenerator {
     }
 
     if (securitySchemeKeys.length > 0) {
-      this.applyGlobalSecurity(openAPIObj, securitySchemeKeys);
+      this.applyGlobalSecurity(openAPIObj, securitySchemeKeys, authMode);
     }
   }
 
@@ -113,11 +113,16 @@ export class SecurityGenerator {
    * @param {Object} openAPIObj - OpenAPI specification object
    * @param {string} securitySchemeKey - Security scheme key
    */
-  static applyGlobalSecurity(openAPIObj, securitySchemeKeys) {
+  static applyGlobalSecurity(openAPIObj, securitySchemeKeys, authMode = 'and') {
     const keys = Array.isArray(securitySchemeKeys) ? securitySchemeKeys : [securitySchemeKeys];
-    // Each entry is a separate requirement object => OR semantics
-    // (client may satisfy any one of the listed schemes).
-    openAPIObj.security = keys.map(key => ({ [key]: [] }));
+    // OpenAPI semantics:
+    //   AND => single requirement object listing all schemes (all must be satisfied).
+    //   OR  => array of requirement objects (any one suffices).
+    if (authMode === 'or') {
+      openAPIObj.security = keys.map(key => ({ [key]: [] }));
+    } else {
+      openAPIObj.security = [keys.reduce((obj, key) => { obj[key] = []; return obj; }, {})];
+    }
   }
 
   /**
