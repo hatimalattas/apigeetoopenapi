@@ -68,19 +68,18 @@ export class OpenApiGenerator {
   }
 
   /**
-   * Generate response schema from JSON payload
-   * @param {string} payload - JSON payload string
-   * @param {string} contentType - Content type
-   * @returns {Object} OpenAPI response schema
+   * Generate response schema from JSON payload. Trailing `// ...` comments
+   * on a property's line become that property's OpenAPI `description`.
    */
   generateResponseSchema(payload, contentType) {
     try {
-      const jsonObject = JSON.parse(payload);
+      const { stripped, descriptions } = this.parsePayloadWithComments(payload);
+      const jsonObject = JSON.parse(stripped);
       return {
         description: 'Successful Operation',
         content: {
           [contentType]: {
-            schema: this.generateSchemaFromJson(jsonObject),
+            schema: this.generateSchemaFromJson(jsonObject, descriptions, ''),
             example: jsonObject
           }
         }
@@ -93,12 +92,7 @@ export class OpenApiGenerator {
     }
   }
 
-  /**
-   * Generate schema from JSON object
-   * @param {any} jsonObject - JSON object
-   * @returns {Object} OpenAPI schema
-   */
-  generateSchemaFromJson(jsonObject) {
+  generateSchemaFromJson(jsonObject, descriptions = new Map(), currentPath = '') {
     if (typeof jsonObject !== 'object' || jsonObject === null) {
       return { type: TypeUtils.getType(jsonObject) };
     }
@@ -106,15 +100,141 @@ export class OpenApiGenerator {
     const schema = {};
     if (Array.isArray(jsonObject)) {
       schema.type = 'array';
-      schema.items = jsonObject.length > 0 ? this.generateSchemaFromJson(jsonObject[0]) : {};
+      schema.items = jsonObject.length > 0
+        ? this.generateSchemaFromJson(jsonObject[0], descriptions, currentPath)
+        : {};
     } else {
       schema.type = 'object';
       schema.properties = {};
       for (const key in jsonObject) {
-        schema.properties[key] = this.generateSchemaFromJson(jsonObject[key]);
+        const childPath = currentPath ? `${currentPath}.${key}` : key;
+        schema.properties[key] = this.generateSchemaFromJson(jsonObject[key], descriptions, childPath);
+        const desc = descriptions.get(childPath);
+        if (desc) {
+          schema.properties[key].description = desc;
+        }
       }
     }
     return schema;
+  }
+
+  parsePayloadWithComments(payload) {
+    const descriptions = new Map();
+    let stripped = '';
+    let pendingKey = null;
+    let lastCompletedPath = null;
+    const stack = [];
+
+    const pathFromStack = () => {
+      const parts = [];
+      for (const f of stack) {
+        if (f.type === 'object' && f.currentKey !== null) {
+          parts.push(f.currentKey);
+        }
+      }
+      return parts.join('.');
+    };
+
+    for (let i = 0; i < payload.length; i++) {
+      const ch = payload[i];
+      const next = payload[i + 1];
+
+      if (ch === '"') {
+        let j = i + 1;
+        let esc = false;
+        while (j < payload.length) {
+          const c = payload[j];
+          if (esc) { esc = false; j++; continue; }
+          if (c === '\\') { esc = true; j++; continue; }
+          if (c === '"') {break;}
+          j++;
+        }
+        const literal = payload.slice(i, j + 1);
+        stripped += literal;
+        pendingKey = literal.slice(1, -1);
+        i = j;
+        continue;
+      }
+
+      if (ch === '/' && next === '/') {
+        let j = i + 2;
+        let comment = '';
+        while (j < payload.length && payload[j] !== '\n') {
+          comment += payload[j];
+          j++;
+        }
+        const trimmed = comment.trim();
+        if (trimmed) {
+          let target = lastCompletedPath;
+          if (!target) {
+            const top = stack[stack.length - 1];
+            if (top && top.type === 'object' && top.currentKey !== null) {
+              target = pathFromStack();
+            }
+          }
+          if (target) {
+            descriptions.set(target, trimmed);
+          }
+        }
+        stripped += ' '.repeat(j - i);
+        i = j - 1;
+        continue;
+      }
+
+      if (ch === '{') {
+        stack.push({ type: 'object', currentKey: null });
+        pendingKey = null;
+        stripped += ch;
+        continue;
+      }
+      if (ch === '[') {
+        stack.push({ type: 'array', currentKey: null });
+        pendingKey = null;
+        stripped += ch;
+        continue;
+      }
+      if (ch === '}' || ch === ']') {
+        const containerPath = pathFromStack();
+        stack.pop();
+        lastCompletedPath = containerPath || null;
+        const parent = stack[stack.length - 1];
+        if (parent && parent.type === 'object') {
+          parent.currentKey = null;
+        }
+        stripped += ch;
+        continue;
+      }
+
+      if (ch === ':') {
+        const top = stack[stack.length - 1];
+        if (top && top.type === 'object' && pendingKey !== null) {
+          top.currentKey = pendingKey;
+        }
+        pendingKey = null;
+        stripped += ch;
+        continue;
+      }
+
+      if (ch === ',') {
+        const top = stack[stack.length - 1];
+        if (top && top.type === 'object' && top.currentKey !== null) {
+          lastCompletedPath = pathFromStack();
+          top.currentKey = null;
+        }
+        stripped += ch;
+        continue;
+      }
+
+      if (ch === '\n') {
+        lastCompletedPath = null;
+        stripped += ch;
+        continue;
+      }
+
+      stripped += ch;
+    }
+
+    return { stripped, descriptions };
   }
 
   /**
