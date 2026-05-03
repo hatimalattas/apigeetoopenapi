@@ -347,6 +347,33 @@ Generate OpenAPI response schemas using `AssignMessage` policies in response flo
 </AssignMessage>
 ```
 
+#### Property Descriptions via `//` Comments
+
+Add a trailing `// ...` comment after a property's value and the tool will use that text as the OpenAPI `description` for that property. The comment is stripped before JSON parsing, so the `example` payload stays valid JSON. `//` inside a string value (e.g. a URL) is left alone.
+
+```xml
+<AssignMessage continueOnError="false" enabled="false" name="AM-UserResponseOAS">
+    <Set>
+        <Payload contentType="application/json">
+            {
+                "data": {
+                    "nelc_id": "NELC-00123",        // NELC identifier
+                    "is_approved": true,             // approval flag
+                    "licensing_status": "approved",  // current license state
+                    "link": "https://example.com/x"  // url; the // inside the string is not a comment
+                },
+                "items": [1, 2, 3]                   // numeric ids (attaches to the array)
+            }
+        </Payload>
+    </Set>
+</AssignMessage>
+```
+
+Comment placement rules:
+- Trailing comment after a property line → description on that property.
+- Trailing comment after `]` or `}` → description on the array/object property that just closed.
+- Comments on their own line, or block comments (`/* ... */`), are not extracted.
+
 #### ProxyEndpoint Placement
 ```xml
 <Flow name="Get User">
