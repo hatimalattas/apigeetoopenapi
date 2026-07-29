@@ -89,6 +89,7 @@ export class Converter {
     const operation = {
       operationId: flow.$.name,
       summary: TypeUtils.safeArrayAccess(flow.Description) || flow.$.name,
+      description: TypeUtils.safeArrayAccess(flow.Description) || flow.$.name,
       parameters: [],
       responses: {}
     };
