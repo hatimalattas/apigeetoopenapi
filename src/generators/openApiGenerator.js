@@ -181,20 +181,35 @@ export class OpenApiGenerator {
         continue;
       }
 
-      if (ch === '{') {
-        stack.push({ type: 'object', currentKey: null });
+      if (ch === '{' || ch === '[') {
+        // Path of the container being opened = keys of the CURRENT object
+        // frames, including the parent key this container is assigned to
+        // (set by the preceding ':'). Recording it as lastCompletedPath lets
+        // a comment on the SAME line as the opening bracket describe the
+        // object/array itself. It self-resets at the next newline, so it
+        // never leaks onto child properties.
+        const openPath = pathFromStack();
+        stack.push({ type: ch === '{' ? 'object' : 'array', currentKey: null });
         pendingKey = null;
-        stripped += ch;
-        continue;
-      }
-      if (ch === '[') {
-        stack.push({ type: 'array', currentKey: null });
-        pendingKey = null;
+        lastCompletedPath = openPath || null;
         stripped += ch;
         continue;
       }
       if (ch === '}' || ch === ']') {
-        const containerPath = pathFromStack();
+        // Path of the container being closed = keys of its ANCESTOR object
+        // frames only, excluding this frame's own currentKey (which is its
+        // last child). This lets a trailing comment after the closing bracket
+        // describe the object/array itself instead of overwriting its last
+        // property. Array frames never contribute a key, so arrays already
+        // behaved correctly; this makes objects behave the same way.
+        const parts = [];
+        for (let s = 0; s < stack.length - 1; s++) {
+          const f = stack[s];
+          if (f.type === 'object' && f.currentKey !== null) {
+            parts.push(f.currentKey);
+          }
+        }
+        const containerPath = parts.join('.');
         stack.pop();
         lastCompletedPath = containerPath || null;
         const parent = stack[stack.length - 1];
